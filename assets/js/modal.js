@@ -13,6 +13,7 @@ function modalEscHandler(ev) {
 
 function openModal(title, bodyHtml) {
     closeModal();
+    if (typeof closeDrawer === 'function') closeDrawer();
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -31,4 +32,21 @@ function openModal(title, bodyHtml) {
     document.addEventListener('keydown', modalEscHandler);
 
     return overlay;
+}
+
+/* In-app replacement for window.confirm() — consistent with the rest of the UI
+   and not subject to browsers suppressing/blocking native dialogs. */
+function confirmModal(message, onConfirm, opts) {
+    opts = opts || {};
+    const overlay = openModal(opts.title || 'Confirm', '' +
+        '<p style="margin:0 0 18px;font-size:13px;color:var(--text);">' + message + '</p>' +
+        '<div style="text-align:right;">' +
+        '<button type="button" class="btn btn-secondary" id="confirmModalCancel">Cancel</button> ' +
+        '<button type="button" class="btn btn-danger" id="confirmModalOk">' + (opts.okLabel || 'Confirm') + '</button>' +
+        '</div>');
+    overlay.querySelector('#confirmModalCancel').addEventListener('click', closeModal);
+    overlay.querySelector('#confirmModalOk').addEventListener('click', function () {
+        closeModal();
+        onConfirm();
+    });
 }

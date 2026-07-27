@@ -34,4 +34,32 @@
 
     document.getElementById('addMemberRow').addEventListener('click', addMemberRow);
     addMemberRow();
+
+    function addTaskRow() {
+        const wrap = document.getElementById('taskRows');
+        const row = document.createElement('div');
+        row.className = 'task-row-card';
+
+        row.innerHTML =
+            '<div class="task-row-remove"><span class="remove-row">Remove</span></div>' +
+            '<div class="task-row-grid">' +
+            '<div class="field"><label>Task Title</label><input type="text" name="task_title[]" placeholder="Task title"></div>' +
+            '<div class="field"><label>Assignee</label><div class="task-row-picker"></div></div>' +
+            '<div class="field"><label>Priority</label><select name="task_priority[]">' +
+            '<option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option>' +
+            '</select></div>' +
+            '<div class="field"><label>Start Date</label><input type="date" name="task_start_date[]"></div>' +
+            '<div class="field"><label>Due Date</label><input type="date" name="task_due_date[]"></div>' +
+            '</div>';
+
+        row.querySelector('.remove-row').onclick = () => row.remove();
+
+        const pickerWrap = row.querySelector('.task-row-picker');
+        pickerWrap.innerHTML = empPickerHTML('task_assignee[]', 'Search name or employee ID…');
+        wrap.appendChild(row);
+        initEmpPicker(pickerWrap, {});
+    }
+
+    document.getElementById('addTaskRow').addEventListener('click', addTaskRow);
+    addTaskRow();
 })();

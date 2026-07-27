@@ -38,6 +38,14 @@ final class UserRepository
         return $row ?: null;
     }
 
+    public function findByEmployeeCode(string $employeeCode): ?array
+    {
+        $stmt = $this->db->prepare('SELECT * FROM users WHERE employee_code = ? AND is_active = 1');
+        $stmt->execute([$employeeCode]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
     /**
      * Lightweight rows for the AJAX search picker: id, name, employee_code, role.
      *
@@ -126,8 +134,8 @@ final class UserRepository
     public function create(array $data): int
     {
         $stmt = $this->db->prepare('
-            INSERT INTO users (employee_code, name, email, password, role, department, manager_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO users (employee_code, name, email, password, role, department, manager_id, stream, telephone, user_group)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
             $data['employee_code'],
@@ -137,6 +145,9 @@ final class UserRepository
             $data['role'],
             $data['department'] ?: null,
             $data['manager_id'] ?: null,
+            $data['stream'] ?: null,
+            $data['telephone'] ?: null,
+            $data['user_group'] ?: null,
         ]);
         return (int)$this->db->lastInsertId();
     }
@@ -156,11 +167,11 @@ final class UserRepository
         $stmt->execute([$managerId, $employeeId]);
     }
 
-    /** Used by the "Edit Employee" modal: role, department, and who they report to. */
-    public function updateProfile(int $id, string $role, ?string $department, ?int $managerId): void
+    /** Used by the "Edit Employee" modal: name, role, department, telephone, and who they report to. */
+    public function updateProfile(int $id, string $name, string $role, ?string $department, ?int $managerId, ?string $telephone = null): void
     {
-        $stmt = $this->db->prepare('UPDATE users SET role = ?, department = ?, manager_id = ? WHERE id = ?');
-        $stmt->execute([$role, $department ?: null, $managerId, $id]);
+        $stmt = $this->db->prepare('UPDATE users SET name = ?, role = ?, department = ?, manager_id = ?, telephone = ? WHERE id = ?');
+        $stmt->execute([$name, $role, $department ?: null, $managerId, $telephone ?: null, $id]);
     }
 
     public function directReports(int $managerId): array

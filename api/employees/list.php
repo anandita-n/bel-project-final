@@ -17,6 +17,8 @@ $results = array_map(fn($e) => [
     'email' => $e['email'],
     'role' => $e['role'],
     'department' => $e['department'],
+    'telephone' => $e['telephone'],
+    'manager_id' => $e['manager_id'] ? (int)$e['manager_id'] : null,
     'manager_name' => $e['manager_name'],
 ], $rows);
 

@@ -19,14 +19,37 @@ final class TaskRepository
     public function listForProject(int $projectId): array
     {
         $stmt = $this->db->prepare('
-            SELECT t.*, u.name AS assignee_name, u.role AS assignee_role
+            SELECT t.*, u.name AS assignee_name, u.role AS assignee_role, c.name AS creator_name
             FROM tasks t
             LEFT JOIN users u ON u.id = t.assigned_to
+            LEFT JOIN users c ON c.id = t.created_by
             WHERE t.project_id = ?
             ORDER BY t.due_date IS NULL, t.due_date ASC, t.created_at DESC
         ');
         $stmt->execute([$projectId]);
         return $stmt->fetchAll();
+    }
+
+    /** Open (not-done) tasks assigned to this user across every project — powers the dashboard's "My Tasks" widget. */
+    public function listOpenForAssignee(int $userId, int $limit = 8): array
+    {
+        $stmt = $this->db->prepare('
+            SELECT t.*, p.name AS project_name, p.project_code
+            FROM tasks t
+            JOIN projects p ON p.id = t.project_id
+            WHERE t.assigned_to = ? AND t.status != "done"
+            ORDER BY t.due_date IS NULL, t.due_date ASC, t.priority = "high" DESC
+            LIMIT ' . (int)$limit . '
+        ');
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll();
+    }
+
+    public function countOpenForAssignee(int $userId): int
+    {
+        $stmt = $this->db->prepare('SELECT COUNT(*) c FROM tasks WHERE assigned_to = ? AND status != "done"');
+        $stmt->execute([$userId]);
+        return (int)$stmt->fetch()['c'];
     }
 
     public function find(int $taskId, int $projectId): ?array
@@ -40,8 +63,8 @@ final class TaskRepository
     public function create(array $data): int
     {
         $stmt = $this->db->prepare('
-            INSERT INTO tasks (project_id, title, description, assigned_to, priority, due_date, created_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO tasks (project_id, title, description, assigned_to, priority, start_date, due_date, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
             $data['project_id'],
@@ -49,6 +72,7 @@ final class TaskRepository
             $data['description'] ?: null,
             $data['assigned_to'] ?: null,
             $data['priority'],
+            $data['start_date'] ?: null,
             $data['due_date'] ?: null,
             $data['created_by'],
         ]);
@@ -72,6 +96,24 @@ final class TaskRepository
     {
         $stmt = $this->db->prepare('UPDATE tasks SET status = ? WHERE id = ?');
         $stmt->execute([$status, $taskId]);
+    }
+
+    public function update(int $taskId, int $projectId, array $data): void
+    {
+        $stmt = $this->db->prepare('
+            UPDATE tasks SET title = ?, description = ?, assigned_to = ?, priority = ?, start_date = ?, due_date = ?
+            WHERE id = ? AND project_id = ?
+        ');
+        $stmt->execute([
+            $data['title'],
+            $data['description'] ?: null,
+            $data['assigned_to'] ?: null,
+            $data['priority'],
+            $data['start_date'] ?: null,
+            $data['due_date'] ?: null,
+            $taskId,
+            $projectId,
+        ]);
     }
 
     public function delete(int $taskId, int $projectId): void

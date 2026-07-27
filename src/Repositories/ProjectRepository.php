@@ -97,8 +97,8 @@ final class ProjectRepository
     public function create(array $data): int
     {
         $stmt = $this->db->prepare('
-            INSERT INTO projects (project_code, name, description, manager_id, start_date)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO projects (project_code, name, description, manager_id, start_date, due_date)
+            VALUES (?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
             $data['project_code'],
@@ -106,6 +106,7 @@ final class ProjectRepository
             $data['description'] ?: null,
             $data['manager_id'],
             $data['start_date'] ?: null,
+            $data['due_date'] ?: null,
         ]);
         return (int)$this->db->lastInsertId();
     }
@@ -113,7 +114,7 @@ final class ProjectRepository
     public function members(int $projectId): array
     {
         $stmt = $this->db->prepare('
-            SELECT u.id, u.name, u.email, u.role AS system_role, u.employee_code, u.department, pm.role_in_project
+            SELECT u.id, u.name, u.email, u.role AS system_role, u.employee_code, u.department, pm.role_in_project, pm.assigned_at
             FROM project_members pm JOIN users u ON u.id = pm.user_id
             WHERE pm.project_id = ? ORDER BY u.name
         ');

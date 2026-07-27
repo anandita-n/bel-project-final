@@ -25,6 +25,7 @@ function render_employee_row(array $e, array $currentUser): string {
     $html = '<tr data-id="' . $e['id'] . '" data-name="' . htmlspecialchars($e['name']) . '"'
         . ' data-role="' . htmlspecialchars($e['role']) . '"'
         . ' data-department="' . htmlspecialchars($e['department'] ?? '') . '"'
+        . ' data-telephone="' . htmlspecialchars($e['telephone'] ?? '') . '"'
         . ' data-manager-id="' . htmlspecialchars($e['manager_id'] ?? '') . '"'
         . ' data-manager-name="' . htmlspecialchars($e['manager_name'] ?? '') . '">';
     $html .= '<td><div class="row-name"><span class="avatar ' . avatar_class($e['role']) . '">' . htmlspecialchars(initials($e['name'])) . '</span>';
@@ -36,11 +37,7 @@ function render_employee_row(array $e, array $currentUser): string {
     $html .= '<td class="manager-cell">' . htmlspecialchars($e['manager_name'] ?? '—') . '</td>';
 
     if ($currentUser['role'] === 'admin') {
-        $html .= '<td class="actions"><button type="button" class="btn btn-secondary edit-emp-btn" style="padding:4px 10px;font-size:11px;">Edit</button>';
-        if ((int)$e['id'] !== (int)$currentUser['id']) {
-            $html .= ' <button type="button" class="btn btn-danger delete-emp-btn" style="padding:4px 10px;font-size:11px;">Delete</button>';
-        }
-        $html .= '</td>';
+        $html .= '<td class="actions"><button type="button" class="row-kebab emp-row-kebab" title="More actions">&#8942;</button></td>';
     }
 
     $html .= '</tr>';
@@ -74,17 +71,40 @@ function render_task_card(array $t, array $taskStatuses, bool $canManage, array 
         $statusOptions .= '<option value="' . $sk . '"' . $selected . '>' . htmlspecialchars($sl) . '</option>';
     }
 
+    $dueLabel = $t['due_date'] ? date('d M', strtotime($t['due_date'])) : '';
+    $dateLabel = (!empty($t['start_date']) && $t['start_date'])
+        ? date('d M', strtotime($t['start_date'])) . ' → ' . $dueLabel
+        : $dueLabel;
+
     $html = '<div class="task-card priority-' . htmlspecialchars($t['priority']) . '" data-task-id="' . $t['id'] . '" data-current-status="' . htmlspecialchars($t['status']) . '">';
+    if ($canManage) {
+        $html .= '<button type="button" class="task-kebab" title="More actions">&#8942;</button>';
+    }
     $html .= '<span class="task-title">' . htmlspecialchars($t['title']) . '</span>';
     $html .= '<div class="task-meta"><span>' . $assigneeHtml . '</span>';
-    $html .= '<span class="task-due' . ($isOverdue ? ' overdue' : '') . '">' . ($t['due_date'] ? htmlspecialchars(date('d M', strtotime($t['due_date']))) : '') . '</span></div>';
+    $html .= '<span class="task-due' . ($isOverdue ? ' overdue' : '') . '">' . htmlspecialchars($dateLabel) . '</span></div>';
     if ($canUpdate) {
         $html .= '<select class="task-status-select">' . $statusOptions . '</select>';
     }
-    if ($canManage) {
-        $html .= '<div class="task-actions"><button type="button" class="delete-task-btn">Delete</button></div>';
-    }
     $html .= '</div>';
 
+    return $html;
+}
+
+/** Server-side render of a team member card — replaces the old table row. */
+function render_member_card(array $m, bool $canManage): string {
+    $html = '<div class="member-card" data-user-id="' . $m['id'] . '" data-user-name="' . htmlspecialchars($m['name']) . '">';
+    if ($canManage) {
+        $html .= '<button type="button" class="task-kebab" title="More actions">&#8942;</button>';
+    }
+    $html .= '<div class="member-card-head">';
+    $html .= '<span class="avatar ' . avatar_class($m['system_role']) . '">' . htmlspecialchars(initials($m['name'])) . '</span>';
+    $html .= '<div class="row-name"><strong>' . htmlspecialchars($m['name']) . '</strong>';
+    $html .= ' <span class="tag tag-' . htmlspecialchars($m['system_role']) . '">' . htmlspecialchars(ucfirst($m['system_role'])) . '</span></div>';
+    $html .= '</div>';
+    $html .= '<div class="member-card-sub">' . htmlspecialchars($m['email']) . '</div>';
+    $html .= '<div class="member-card-sub">' . htmlspecialchars($m['department'] ?? '—') . '</div>';
+    $html .= '<span class="member-card-role">' . htmlspecialchars($m['role_in_project']) . '</span>';
+    $html .= '</div>';
     return $html;
 }

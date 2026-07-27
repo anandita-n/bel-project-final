@@ -14,6 +14,9 @@ $password = $body['password'] ?? '';
 $role = $body['role'] ?? 'employee';
 $department = trim($body['department'] ?? '');
 $manager_id = !empty($body['manager_id']) ? (int)$body['manager_id'] : null;
+$stream = trim($body['stream'] ?? '');
+$telephone = trim($body['telephone'] ?? '');
+$user_group = trim($body['user_group'] ?? '');
 
 $users = new UserRepository();
 
@@ -35,6 +38,9 @@ $id = $users->create([
     'role' => $role,
     'department' => $department,
     'manager_id' => $manager_id,
+    'stream' => $stream,
+    'telephone' => $telephone,
+    'user_group' => $user_group,
 ]);
 
 $manager = $manager_id ? $users->findById($manager_id) : null;
@@ -48,4 +54,7 @@ json_out(['ok' => true, 'employee' => [
     'department' => $department,
     'manager_id' => $manager_id,
     'manager_name' => $manager['name'] ?? null,
+    'stream' => $stream,
+    'telephone' => $telephone,
+    'user_group' => $user_group,
 ]]);
