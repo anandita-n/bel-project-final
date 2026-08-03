@@ -13,10 +13,16 @@ require 'includes/layout_top.php';
 
 <script src="assets/js/api.js"></script>
 
-<div class="panel">
+<div class="panel panel-table">
     <div class="panel-head">
         <h3>Projects</h3>
         <div class="panel-head-tools">
+            <select id="statusFilter">
+                <option value="">All statuses</option>
+                <option value="active">Active</option>
+                <option value="on_hold">On Hold</option>
+                <option value="completed">Completed</option>
+            </select>
             <div class="search-bar">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input type="text" id="searchInput" placeholder="Search name, code, manager…">
@@ -43,7 +49,7 @@ require 'includes/layout_top.php';
     </div>
 </div>
 
-<script src="assets/js/utils.js"></script>
-<script src="assets/js/pages/projects.js"></script>
+<script src="assets/js/utils.js?v=<?= filemtime(__DIR__ . '/assets/js/utils.js') ?>"></script>
+<script src="assets/js/pages/projects.js?v=<?= filemtime(__DIR__ . '/assets/js/pages/projects.js') ?>"></script>
 
 <?php require 'includes/layout_bottom.php'; ?>

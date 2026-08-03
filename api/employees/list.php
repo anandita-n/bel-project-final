@@ -20,6 +20,7 @@ $results = array_map(fn($e) => [
     'telephone' => $e['telephone'],
     'manager_id' => $e['manager_id'] ? (int)$e['manager_id'] : null,
     'manager_name' => $e['manager_name'],
+    'has_photo' => !empty($e['photo_filename']),
 ], $rows);
 
 json_out(['results' => $results, 'query' => $q]);

@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../src/autoload.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 header('Content-Type: application/json; charset=utf-8');
 

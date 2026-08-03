@@ -6,9 +6,9 @@
             '<tr>' +
             '<td><a href="project_detail.php?id=' + p.id + '">' + escapeHtml(p.project_code) + '</a></td>' +
             '<td><a href="project_detail.php?id=' + p.id + '">' + escapeHtml(p.name) + '</a></td>' +
-            '<td><div class="row-name"><span class="avatar avatar-sm avatar-manager">' + initials(p.manager_name) + '</span>' + escapeHtml(p.manager_name) + '</div></td>' +
+            '<td><div class="row-name">' + avatarHTML({ id: p.manager_id, name: p.manager_name, role: p.manager_role, has_photo: p.manager_has_photo }, 'avatar-sm') + escapeHtml(p.manager_name) + '</div></td>' +
             '<td>' + p.member_count + '</td>' +
-            '<td><span class="tag tag-' + p.status + '">' + escapeHtml(cap(p.status.replace('_', ' '))) + '</span></td>' +
+            '<td><span class="dir-badge dir-badge-' + p.status + '">' + escapeHtml(cap(p.status.replace('_', ' '))) + '</span></td>' +
             '</tr>';
     }
 
@@ -22,9 +22,11 @@
     const searchInput = document.getElementById('searchInput');
     const searchMeta = document.getElementById('searchMeta');
     const clearLink = document.getElementById('clearSearch');
+    const statusFilter = document.getElementById('statusFilter');
 
     const runSearch = debounce(function (q) {
-        apiGet('api/projects/list.php?q=' + encodeURIComponent(q)).then(function (data) {
+        const status = statusFilter ? statusFilter.value : '';
+        apiGet('api/projects/list.php?q=' + encodeURIComponent(q) + '&status=' + encodeURIComponent(status)).then(function (data) {
             renderRows(data.results);
             if (q) {
                 searchMeta.style.display = '';
@@ -39,4 +41,7 @@
 
     searchInput.addEventListener('input', function () { runSearch(searchInput.value.trim()); });
     clearLink.addEventListener('click', function (ev) { ev.preventDefault(); searchInput.value = ''; runSearch(''); });
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function () { runSearch(searchInput.value.trim()); });
+    }
 })();

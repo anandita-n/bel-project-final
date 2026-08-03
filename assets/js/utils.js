@@ -19,3 +19,14 @@ function fmtDate(iso) {
     const d = new Date(iso + 'T00:00:00');
     return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
 }
+
+/* A person's avatar: their uploaded photo if they have one, otherwise initials.
+   person needs id, name, role (system_role also accepted), and has_photo. */
+function avatarHTML(person, sizeClass) {
+    const role = person.role || person.system_role || 'employee';
+    const cls = ('avatar ' + (sizeClass || '') + ' avatar-' + role).replace(/\s+/g, ' ').trim();
+    if (person.has_photo && person.id) {
+        return '<img class="' + cls + ' avatar-img" src="api/employees/photo.php?action=view&id=' + person.id + '" alt="' + escapeHtml(person.name || '') + '">';
+    }
+    return '<span class="' + cls + '">' + initials(person.name || '') + '</span>';
+}

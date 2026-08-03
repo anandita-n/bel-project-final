@@ -32,6 +32,9 @@ $employee = $users->findActiveById($id);
 if (!$employee) {
     json_error('Employee not found.', 404);
 }
+if ($manager_id !== null && !$users->findActiveById($manager_id)) {
+    json_error('Selected manager is not an active employee.');
+}
 
 $users->updateProfile($id, $name, $role, $department, $manager_id, $telephone);
 

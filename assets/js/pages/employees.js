@@ -11,11 +11,11 @@
             '<tr data-id="' + e.id + '" data-name="' + escapeHtml(e.name) + '" data-role="' + e.role + '" ' +
             'data-department="' + escapeHtml(e.department || '') + '" data-telephone="' + escapeHtml(e.telephone || '') + '" ' +
             'data-manager-id="' + (e.manager_id || '') + '" data-manager-name="' + escapeHtml(e.manager_name || '') + '">' +
-            '<td><div class="row-name"><span class="avatar avatar-' + e.role + '">' + initials(e.name) + '</span>' +
+            '<td><div class="row-name">' + avatarHTML(e) +
             '<a href="employee_detail.php?id=' + e.id + '">' + escapeHtml(e.name) + '</a></div></td>' +
-            '<td>' + escapeHtml(e.employee_code) + '</td>' +
+            '<td><a class="code-link" href="employee_detail.php?id=' + e.id + '">' + escapeHtml(e.employee_code) + '</a></td>' +
             '<td>' + escapeHtml(e.email) + '</td>' +
-            '<td><span class="tag tag-' + e.role + '">' + escapeHtml(cap(e.role)) + '</span></td>' +
+            '<td><span class="dir-badge dir-badge-' + e.role + '">' + escapeHtml(cap(e.role)) + '</span></td>' +
             '<td class="dept-cell">' + escapeHtml(e.department || '—') + '</td>' +
             '<td class="manager-cell">' + escapeHtml(e.manager_name || '—') + '</td>' +
             actions +
@@ -35,22 +35,41 @@
         if (!kebab) return;
         const items = [{ label: 'Edit', onClick: function () { openEditModal(row); } }];
         if (parseInt(row.dataset.id, 10) !== cfg.currentUserId) {
+            items.push({ label: 'Reset Password', onClick: function () { openResetPasswordModal(row); } });
             items.push({
-                label: 'Delete', danger: true, onClick: function () {
-                    confirmModal('Remove ' + escapeHtml(row.dataset.name) + ' from the system?', function () {
-                        apiPost('api/employees/delete.php', { id: row.dataset.id }).then(function () {
-                            row.remove();
-                            const tbody = document.getElementById('employeesTbody');
-                            if (!tbody.children.length) {
-                                document.getElementById('employeesTable').style.display = 'none';
-                                document.getElementById('employeesEmpty').style.display = '';
-                            }
-                        }).catch(function (err) { alert(err.message); });
-                    }, { okLabel: 'Remove' });
-                },
+                label: 'Delete', danger: true, onClick: function () { openDeleteModal(row); },
             });
         }
         initOverflowMenu(kebab, items);
+    }
+
+    function openResetPasswordModal(row) {
+        const id = row.dataset.id;
+        const overlay = openModal('Reset Password — ' + row.dataset.name, '' +
+            '<div id="resetPwError" class="error-msg" style="display:none;"></div>' +
+            '<form id="resetPwForm">' +
+            '<div class="field"><label>New Temporary Password</label>' +
+            '<input type="password" id="resetPwInput" required>' +
+            '<div id="resetPwChecklist"></div></div>' +
+            '<button type="submit" class="btn">Reset Password</button>' +
+            '</form>');
+
+        const pwInput = overlay.querySelector('#resetPwInput');
+        const checklistBox = overlay.querySelector('#resetPwChecklist');
+        checklistBox.innerHTML = passwordChecklistHTML();
+        bindPasswordChecklist(pwInput, checklistBox);
+
+        overlay.querySelector('#resetPwForm').addEventListener('submit', function (ev) {
+            ev.preventDefault();
+            const errorBox = overlay.querySelector('#resetPwError');
+            if (!isPasswordValid(pwInput.value)) {
+                showError(errorBox, 'Password does not meet the requirements above.');
+                return;
+            }
+            apiPost('api/employees/reset_password.php', { id: id, new_password: pwInput.value }).then(function () {
+                closeModal();
+            }).catch(function (err) { showError(errorBox, err.message); });
+        });
     }
 
     const searchInput = document.getElementById('searchInput');
@@ -126,13 +145,73 @@
                 row.dataset.department = data.employee.department || '';
                 row.querySelector('.row-name a').textContent = data.employee.name;
                 row.querySelector('.row-name .avatar').textContent = initials(data.employee.name);
-                row.querySelector('.tag').className = 'tag tag-' + data.employee.role;
-                row.querySelector('.tag').textContent = cap(data.employee.role);
+                row.querySelector('.dir-badge').className = 'dir-badge dir-badge-' + data.employee.role;
+                row.querySelector('.dir-badge').textContent = cap(data.employee.role);
                 row.querySelector('.dept-cell').textContent = data.employee.department || '—';
                 row.querySelector('.manager-cell').textContent = data.employee.manager_name || '—';
                 row.dataset.managerName = data.employee.manager_name || '';
                 closeModal();
             }).catch(function (err) { showError(errorBox, err.message); });
         });
+    }
+
+    /* ---------- Delete Employee modal (Deactivate vs. Permanently Delete) ---------- */
+
+    const COUNT_LABELS = [
+        ['projects_managed', 'Projects Managed'],
+        ['tasks_assigned', 'Tasks Assigned'],
+        ['tasks_created', 'Tasks Created'],
+        ['discussion_posts', 'Discussion Posts'],
+        ['comments', 'Comments'],
+    ];
+
+    function openDeleteModal(row) {
+        const id = row.dataset.id;
+        const name = row.dataset.name;
+
+        apiGet('api/employees/delete_info.php?id=' + id).then(function (data) {
+            const c = data.counts;
+            const total = COUNT_LABELS.reduce((sum, [key]) => sum + c[key], 0);
+            const canHardDelete = total === 0;
+
+            const countsHtml = total > 0 ? (
+                '<div class="delete-emp-warning">' +
+                '<strong>&#9888; This employee has linked records.</strong>' +
+                '<ul class="delete-emp-counts">' +
+                COUNT_LABELS.map(([key, label]) => '<li><span>' + label + '</span><span>' + c[key] + '</span></li>').join('') +
+                '</ul></div>'
+            ) : '';
+
+            const overlay = openModal('Delete ' + escapeHtml(name), '' +
+                countsHtml +
+                '<div id="deleteEmpError" class="error-msg" style="display:none;"></div>' +
+                '<form id="deleteEmpForm" class="delete-emp-form">' +
+                '<label class="delete-emp-option"><input type="radio" name="deleteAction" value="cancel" checked> Cancel</label>' +
+                '<label class="delete-emp-option"><input type="radio" name="deleteAction" value="deactivate"> Deactivate</label>' +
+                '<label class="delete-emp-option' + (canHardDelete ? '' : ' disabled') + '">' +
+                '<input type="radio" name="deleteAction" value="hard_delete"' + (canHardDelete ? '' : ' disabled') + '> Permanently Delete' +
+                (canHardDelete ? '' : '<span class="delete-emp-hint">Only available if there are no linked records.</span>') +
+                '</label>' +
+                '<button type="submit" class="btn btn-danger">Confirm</button>' +
+                '</form>');
+
+            overlay.querySelector('#deleteEmpForm').addEventListener('submit', function (ev) {
+                ev.preventDefault();
+                const action = overlay.querySelector('input[name="deleteAction"]:checked').value;
+                if (action === 'cancel') { closeModal(); return; }
+
+                apiPost('api/employees/delete.php', { id: id, action: action }).then(function () {
+                    row.remove();
+                    const tbody = document.getElementById('employeesTbody');
+                    if (!tbody.children.length) {
+                        document.getElementById('employeesTable').style.display = 'none';
+                        document.getElementById('employeesEmpty').style.display = '';
+                    }
+                    closeModal();
+                }).catch(function (err) {
+                    showError(overlay.querySelector('#deleteEmpError'), err.message);
+                });
+            });
+        }).catch(function (err) { alert(err.message); });
     }
 })();

@@ -4,21 +4,23 @@ require_once 'includes/bootstrap.php';
 use App\Repositories\UserRepository;
 
 if (current_user()) {
-    header('Location: dashboard.php');
+    header('Location: projects.php');
     exit;
 }
 
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
+    $identifier = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $loginAs = $_POST['login_as'] ?? '';
 
-    if ($email === '' || $password === '' || $loginAs === '') {
-        $error = 'Please select a role and enter both email and password.';
+    if ($identifier === '' || $password === '' || $loginAs === '') {
+        $error = 'Please select a role and enter both ID and password.';
     } else {
-        $user = (new UserRepository())->findByEmail($email);
+        $users = new UserRepository();
+        // Admins log in with email; employees/managers log in with their staff ID.
+        $user = $loginAs === 'admin' ? $users->findByEmail($identifier) : $users->findByEmployeeCode($identifier);
 
         if ($user && password_verify($password, $user['password'])) {
             $userCategory = $user['role'] === 'admin' ? 'admin' : 'user';
@@ -31,12 +33,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'name' => $user['name'],
                     'email' => $user['email'],
                     'role' => $user['role'],
+                    'has_photo' => !empty($user['photo_filename']),
+                    'must_change_password' => !empty($user['must_change_password']),
                 ];
-                header('Location: dashboard.php');
+                header('Location: projects.php');
                 exit;
             }
         } else {
-            $error = 'Invalid email or password.';
+            $error = 'Invalid ID or password.';
         }
     }
 }
@@ -63,15 +67,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php $selectedRole = $_POST['login_as'] ?? ''; ?>
         <form method="POST" action="login.php">
             <div class="field">
-                <select id="login_as" name="login_as" required onchange="document.getElementById('email_label').textContent = this.value === 'admin' ? 'Admin ID' : (this.value === 'user' ? 'User ID' : 'ID');">
-                    <option value="">Select&hellip;</option>
+                <select id="login_as" name="login_as" required onchange="
+                    document.getElementById('email_label').textContent = this.value === 'admin' ? 'Admin ID' : (this.value === 'user' ? 'User ID' : 'ID');
+                    var idInput = document.getElementById('email');
+                    idInput.type = this.value === 'admin' ? 'email' : 'text';
+                    idInput.placeholder = this.value === 'admin' ? 'admin@bel.co.in' : 'e.g. BEL0031';
+                ">
+                    <option value="" disabled<?= $selectedRole === '' ? ' selected' : '' ?>>Select</option>
                     <option value="admin" <?= $selectedRole === 'admin' ? 'selected' : '' ?>>Admin</option>
                     <option value="user" <?= $selectedRole === 'user' ? 'selected' : '' ?>>User</option>
                 </select>
             </div>
             <div class="field">
                 <label id="email_label" for="email"><?= $selectedRole === 'admin' ? 'Admin ID' : ($selectedRole === 'user' ? 'User ID' : 'ID') ?></label>
-                <input type="email" id="email" name="email" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required autofocus>
+                <input type="<?= $selectedRole === 'admin' ? 'email' : 'text' ?>" id="email" name="email" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" placeholder="<?= $selectedRole === 'admin' ? 'admin@bel.co.in' : 'e.g. BEL0031' ?>" required autofocus>
             </div>
             <div class="field">
                 <label for="password">Password</label>

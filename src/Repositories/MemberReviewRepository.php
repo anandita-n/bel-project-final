@@ -28,7 +28,7 @@ final class MemberReviewRepository
     public function forUser(int $userId, int $limit = 20): array
     {
         $stmt = $this->db->prepare('
-            SELECT r.*, p.name AS project_name, p.project_code, a.name AS author_name
+            SELECT r.*, p.name AS project_name, p.project_code, a.name AS author_name, a.role AS author_role, a.photo_filename AS author_photo_filename
             FROM member_reviews r
             JOIN projects p ON p.id = r.project_id
             JOIN users a ON a.id = r.author_id

@@ -13,12 +13,13 @@ require 'includes/layout_top.php';
 
 <script src="assets/js/api.js"></script>
 <script src="assets/js/emp-picker.js"></script>
+<script src="assets/js/password-rules.js?v=<?= filemtime(__DIR__ . '/assets/js/password-rules.js') ?>"></script>
 <script src="assets/js/modal.js?v=<?= filemtime(__DIR__ . '/assets/js/modal.js') ?>"></script>
 <script src="assets/js/dropdown.js?v=<?= filemtime(__DIR__ . '/assets/js/dropdown.js') ?>"></script>
 
-<div class="panel">
+<div class="panel panel-table">
     <div class="panel-head">
-        <h3>All Employees</h3>
+        <h3>All Staff</h3>
         <div class="panel-head-tools">
             <div class="search-bar">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -36,7 +37,7 @@ require 'includes/layout_top.php';
         <table id="employeesTable">
             <thead>
                 <tr>
-                    <th>Employee</th><th>Employee Code</th><th>Email</th><th>Role</th>
+                    <th>Staff</th><th>Staff Code</th><th>Email</th><th>Role</th>
                     <th>Department</th><th>Reports To</th>
                     <?php if ($u['role'] === 'admin'): ?><th>Actions</th><?php endif; ?>
                 </tr>
@@ -56,7 +57,7 @@ window.PAGE_CONFIG = {
     currentUserId: <?= (int)$u['id'] ?>,
 };
 </script>
-<script src="assets/js/utils.js"></script>
+<script src="assets/js/utils.js?v=<?= filemtime(__DIR__ . '/assets/js/utils.js') ?>"></script>
 <script src="assets/js/pages/employees.js?v=<?= filemtime(__DIR__ . '/assets/js/pages/employees.js') ?>"></script>
 
 <?php require 'includes/layout_bottom.php'; ?>

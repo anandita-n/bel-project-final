@@ -1,94 +1,40 @@
 <?php
 require_once 'includes/bootstrap.php';
-require_role(['admin','manager']);
-
-use App\Repositories\UserRepository;
+require_login();
 
 $page_title = 'Organisation';
-$users = new UserRepository();
-
-$staffId = trim($_GET['staff_id'] ?? '');
-$error = '';
-$employee = null;
-$chain = [];
-$children = [];
-
-if ($staffId !== '') {
-    $employee = $users->findByEmployeeCode($staffId);
-
-    if (!$employee) {
-        $error = 'No employee found with Staff ID "' . htmlspecialchars($staffId) . '".';
-    } else {
-        $chain[] = $employee;
-        $current = $employee;
-        while (!empty($current['manager_id'])) {
-            $mgr = $users->findById((int)$current['manager_id']);
-            if (!$mgr) break;
-            $chain[] = $mgr;
-            $current = $mgr;
-        }
-        $chain = array_reverse($chain);
-        $children = $users->directReports((int)$employee['id']);
-    }
-}
+$u = current_user();
+$is_admin = $u['role'] === 'admin';
 
 require 'includes/layout_top.php';
 ?>
 
-<div class="panel">
-    <div class="panel-head"><h3>Find Employee</h3></div>
-    <div class="panel-body">
-        <form method="GET" action="organisation.php" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
-            <div class="field" style="margin-bottom:0; flex:1; min-width:220px; max-width:280px;">
-                <label for="staff_id">Staff ID</label>
-                <input type="text" id="staff_id" name="staff_id" value="<?= htmlspecialchars($staffId) ?>" placeholder="e.g. BEL0002" required autofocus>
-            </div>
-            <button type="submit" class="btn">Display</button>
-        </form>
-        <?php if ($error): ?><div class="error-msg" style="margin-top:14px;"><?= $error ?></div><?php endif; ?>
-    </div>
-</div>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/utils.js?v=<?= filemtime(__DIR__ . '/assets/js/utils.js') ?>"></script>
+<?php if ($is_admin): ?>
+<script src="assets/js/emp-picker.js"></script>
+<script src="assets/js/modal.js?v=<?= filemtime(__DIR__ . '/assets/js/modal.js') ?>"></script>
+<?php endif; ?>
 
-<?php if ($employee): ?>
-<div class="panel">
-    <div class="panel-head"><h3>Organisation Tree — <?= htmlspecialchars($employee['name']) ?> (<?= htmlspecialchars($employee['employee_code']) ?>)</h3></div>
-    <div class="panel-body">
-        <div class="org-chart">
-            <?php foreach ($chain as $i => $node):
-                $isSelf = $node['id'] === $employee['id'];
-            ?>
-                <div class="org-node <?= $isSelf ? 'self' : '' ?>">
-                    <span class="avatar org-avatar <?= avatar_class($node['role']) ?>"><?= htmlspecialchars(initials($node['name'])) ?></span>
-                    <?php if ($isSelf): ?>
-                        <span class="org-name"><?= htmlspecialchars($node['name']) ?></span>
-                    <?php else: ?>
-                        <a href="employee_detail.php?id=<?= $node['id'] ?>" class="org-name"><?= htmlspecialchars($node['name']) ?></a>
-                    <?php endif; ?>
-                    <span class="org-role"><?= htmlspecialchars($node['employee_code']) ?> &middot; <?= htmlspecialchars(ucfirst($node['role'])) ?><?= $node['department'] ? ' &middot; ' . htmlspecialchars($node['department']) : '' ?></span>
-                </div>
-                <?php if ($i < count($chain) - 1 || !empty($children)): ?>
-                    <div class="org-stem"></div>
-                <?php endif; ?>
-            <?php endforeach; ?>
-
-            <?php if (!empty($children)): ?>
-                <div class="org-children">
-                    <?php foreach ($children as $c): ?>
-                    <div class="org-child-col">
-                        <div class="org-node">
-                            <span class="avatar org-avatar <?= avatar_class($c['role']) ?>"><?= htmlspecialchars(initials($c['name'])) ?></span>
-                            <a href="employee_detail.php?id=<?= $c['id'] ?>" class="org-name"><?= htmlspecialchars($c['name']) ?></a>
-                            <span class="org-role"><?= htmlspecialchars($c['employee_code']) ?> &middot; <?= htmlspecialchars(ucfirst($c['role'])) ?><?= $c['department'] ? ' &middot; ' . htmlspecialchars($c['department']) : '' ?></span>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php else: ?>
-                <div class="org-no-reports">No direct reports</div>
-            <?php endif; ?>
+<div class="standalone-panel-head">
+    <h3>Organisation Structure</h3>
+    <div class="panel-head-tools">
+        <div class="search-bar">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="orgFilterInput" placeholder="Search by name or staff ID…">
         </div>
     </div>
 </div>
-<?php endif; ?>
+<div id="orgSearchResult" class="org-search-result" style="display:none;"></div>
+<div id="orgEmployeeInfo" class="panel org-employee-info" style="display:none;"></div>
+<div id="orgChartPrompt" class="empty-state">Search by name or employee ID above to view that employee's manager and direct reports.</div>
+<div class="org-chart" id="orgChartWrap" style="display:none;">
+    <div class="org-roots"></div>
+</div>
+
+<script>
+window.PAGE_CONFIG = { isAdmin: <?= $is_admin ? 'true' : 'false' ?> };
+</script>
+<script src="assets/js/pages/organisation.js?v=<?= filemtime(__DIR__ . '/assets/js/pages/organisation.js') ?>"></script>
 
 <?php require 'includes/layout_bottom.php'; ?>
