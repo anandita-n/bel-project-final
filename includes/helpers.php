@@ -215,8 +215,22 @@ function require_project_active(array $project): void {
     }
 }
 
-/** Server-side render of an employee row — mirrors employeeRowHTML() in employees.php's inline JS. */
-function render_employee_row(array $e): string {
+/** softDelete() suffixes email/employee_code with the row's own id so a new hire can reuse the
+ *  original values; these strip that suffix back off for display, matching what reactivate()
+ *  would restore them to. No-ops on an active employee's already-clean values. */
+function display_employee_code(array $e): string {
+    $suffix = '-DEL' . $e['id'];
+    return str_ends_with($e['employee_code'], $suffix) ? substr($e['employee_code'], 0, -strlen($suffix)) : $e['employee_code'];
+}
+function display_employee_email(array $e): string {
+    $suffix = '.deleted' . $e['id'];
+    return str_ends_with($e['email'], $suffix) ? substr($e['email'], 0, -strlen($suffix)) : $e['email'];
+}
+
+/** Server-side render of an employee row — mirrors employeeRowHTML() in employees.js.
+ *  $inactive: deactivated employees have no working profile link (employee_detail.php only
+ *  finds active users) and get a Reactivate button in place of the Reports To column. */
+function render_employee_row(array $e, bool $inactive = false): string {
     $html = '<tr data-id="' . $e['id'] . '" data-name="' . htmlspecialchars($e['name']) . '"'
         . ' data-role="' . htmlspecialchars($e['role']) . '"'
         . ' data-department="' . htmlspecialchars($e['department'] ?? '') . '"'
@@ -224,12 +238,19 @@ function render_employee_row(array $e): string {
         . ' data-manager-id="' . htmlspecialchars($e['manager_id'] ?? '') . '"'
         . ' data-manager-name="' . htmlspecialchars($e['manager_name'] ?? '') . '">';
     $html .= '<td><div class="row-name">' . render_avatar($e);
-    $html .= '<a href="employee_detail.php?id=' . $e['id'] . '">' . htmlspecialchars($e['name']) . '</a></div></td>';
-    $html .= '<td><a class="code-link" href="employee_detail.php?id=' . $e['id'] . '">' . htmlspecialchars($e['employee_code']) . '</a></td>';
-    $html .= '<td>' . htmlspecialchars($e['email']) . '</td>';
+    $html .= $inactive
+        ? '<span>' . htmlspecialchars($e['name']) . '</span>'
+        : '<a href="employee_detail.php?id=' . $e['id'] . '">' . htmlspecialchars($e['name']) . '</a>';
+    $html .= '</div></td>';
+    $html .= $inactive
+        ? '<td>' . htmlspecialchars(display_employee_code($e)) . '</td>'
+        : '<td><a class="code-link" href="employee_detail.php?id=' . $e['id'] . '">' . htmlspecialchars($e['employee_code']) . '</a></td>';
+    $html .= '<td>' . htmlspecialchars($inactive ? display_employee_email($e) : $e['email']) . '</td>';
     $html .= '<td><span class="dir-badge dir-badge-' . htmlspecialchars($e['role']) . '">' . htmlspecialchars(ucfirst($e['role'])) . '</span></td>';
-    $html .= '<td class="dept-cell">' . htmlspecialchars($e['department'] ?? '—') . '</td>';
-    $html .= '<td class="manager-cell">' . htmlspecialchars($e['manager_name'] ?? '—') . '</td>';
+    $html .= '<td class="dept-cell">' . htmlspecialchars($e['department'] ?: '—') . '</td>';
+    $html .= $inactive
+        ? '<td><button type="button" class="pill-btn pill-btn-sm reactivate-btn">Reactivate</button></td>'
+        : '<td class="manager-cell">' . htmlspecialchars($e['manager_name'] ?? '—') . '</td>';
     $html .= '</tr>';
     return $html;
 }

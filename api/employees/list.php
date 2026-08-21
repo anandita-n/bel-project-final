@@ -8,18 +8,19 @@ require_role_json(['admin']);
 
 $q = trim($_GET['q'] ?? '');
 $department = trim($_GET['department'] ?? '');
+$status = in_array($_GET['status'] ?? '', ['active', 'inactive'], true) ? $_GET['status'] : 'active';
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 50;
 
 $repo = new UserRepository();
-$rows = $repo->listActiveWithManager($q, $department, $page, $perPage);
-$total = $repo->countActiveWithManager($q, $department);
+$rows = $repo->listActiveWithManager($q, $department, $page, $perPage, $status);
+$total = $repo->countActiveWithManager($q, $department, $status);
 
 $results = array_map(fn($e) => [
     'id' => (int)$e['id'],
     'name' => $e['name'],
-    'employee_code' => $e['employee_code'],
-    'email' => $e['email'],
+    'employee_code' => $status === 'inactive' ? display_employee_code($e) : $e['employee_code'],
+    'email' => $status === 'inactive' ? display_employee_email($e) : $e['email'],
     'role' => $e['role'],
     'department' => $e['department'],
     'telephone' => $e['telephone'],

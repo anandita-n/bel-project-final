@@ -8,6 +8,7 @@ $u = current_user();
 $repo = new UserRepository();
 
 $department = trim($_GET['department'] ?? '');
+$status = in_array($_GET['status'] ?? '', ['active', 'inactive'], true) ? $_GET['status'] : 'active';
 $page_title = $department !== '' ? 'Staff — ' . $department : 'Staff';
 
 if ($department === '') {
@@ -16,8 +17,8 @@ if ($department === '') {
 } else {
     $perPage = 50;
     $page = max(1, (int)($_GET['page'] ?? 1));
-    $employees = $repo->listActiveWithManager('', $department, $page, $perPage);
-    $total = $repo->countActiveWithManager('', $department);
+    $employees = $repo->listActiveWithManager('', $department, $page, $perPage, $status);
+    $total = $repo->countActiveWithManager('', $department, $status);
     $totalPages = max(1, (int)ceil($total / $perPage));
 }
 
@@ -73,6 +74,10 @@ require 'includes/layout_top.php';
     <div class="panel-head">
         <h3><?= htmlspecialchars($department) ?></h3>
         <div class="panel-head-tools">
+            <select id="statusFilter" class="filter-select">
+                <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Active</option>
+                <option value="inactive" <?= $status === 'inactive' ? 'selected' : '' ?>>Deactivated</option>
+            </select>
             <div class="search-bar">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input type="text" id="searchInput" placeholder="Search name, code, email…">
@@ -84,18 +89,18 @@ require 'includes/layout_top.php';
         <div id="searchMeta" class="search-meta" style="padding:12px 18px 0; display:none;"></div>
         <div id="employeesEmpty" class="empty-state" style="<?= empty($employees) ? '' : 'display:none;' ?>">
             <div class="empty-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
-            No employees found.
+            <?= $status === 'inactive' ? 'No deactivated employees.' : 'No employees found.' ?>
         </div>
         <table id="employeesTable" style="<?= empty($employees) ? 'display:none;' : '' ?>">
             <thead>
                 <tr>
                     <th>Staff</th><th>ID</th><th>Email</th><th>Role</th>
-                    <th>Department</th><th>Reports To</th>
+                    <th>Department</th><th><?= $status === 'inactive' ? '' : 'Reports To' ?></th>
                 </tr>
             </thead>
             <tbody id="employeesTbody">
                 <?php foreach ($employees as $e): ?>
-                <?= render_employee_row($e) ?>
+                <?= render_employee_row($e, $status === 'inactive') ?>
                 <?php endforeach; ?>
             </tbody>
         </table>
@@ -109,6 +114,7 @@ window.PAGE_CONFIG = {
     isAdmin: <?= $u['role'] === 'admin' ? 'true' : 'false' ?>,
     currentUserId: <?= (int)$u['id'] ?>,
     department: <?= json_encode($department) ?>,
+    status: <?= json_encode($status) ?>,
 };
 </script>
 <script src="assets/js/utils.js?v=<?= filemtime(__DIR__ . '/assets/js/utils.js') ?>"></script>

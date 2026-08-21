@@ -137,13 +137,16 @@ test_suite('UserRepository (hierarchy search)', function () {
         assert_null($repo->findActiveById($id), 'Should remain inactive after a failed reactivate');
     });
 
-    test('listInactive only returns deactivated employees', function () use ($repo) {
+    test('listActiveWithManager/countActiveWithManager status=inactive only returns deactivated employees', function () use ($repo) {
         $active = make_user('Stays Active', 'BEL-LI01');
         $inactive = make_user('Goes Inactive', 'BEL-LI02');
         $repo->softDelete($inactive);
 
-        $ids = array_column($repo->listInactive(), 'id');
+        $ids = array_column($repo->listActiveWithManager('', '', 1, 0, 'inactive'), 'id');
         assert_contains($inactive, $ids);
         assert_true(!in_array($active, $ids, true));
+
+        $count = $repo->countActiveWithManager('BEL-LI', '', 'inactive');
+        assert_equals(1, $count);
     });
 });

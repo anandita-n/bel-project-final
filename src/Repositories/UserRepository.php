@@ -98,10 +98,11 @@ final class UserRepository
         return $stmt->fetchAll();
     }
 
-    /** Shared WHERE/params builder for listActiveWithManager()/countActiveWithManager(). */
-    private function activeScope(string $query, string $department): array
+    /** Shared WHERE/params builder for listActiveWithManager()/countActiveWithManager().
+     *  $status is 'active' or 'inactive' - the "Active"/"Deactivated" dropdown on employees.php. */
+    private function activeScope(string $query, string $department, string $status = 'active'): array
     {
-        $where = ['e.is_active = 1'];
+        $where = ['e.is_active = ' . ($status === 'inactive' ? '0' : '1')];
         $params = [];
 
         if ($query !== '') {
@@ -122,7 +123,7 @@ final class UserRepository
 
     /** Full listing for employees.php, with manager name joined and optional text/department filter.
      *  $page/$perPage: pass $perPage <= 0 for the old "no pagination" behavior (small result sets only). */
-    public function listActiveWithManager(string $query = '', string $department = '', int $page = 1, int $perPage = 0): array
+    public function listActiveWithManager(string $query = '', string $department = '', int $page = 1, int $perPage = 0, string $status = 'active'): array
     {
         $sql = '
             SELECT e.id, e.name, e.role, e.employee_code, e.email, e.department, e.telephone,
@@ -130,7 +131,7 @@ final class UserRepository
             FROM users e
             LEFT JOIN users m ON m.id = e.manager_id
         ';
-        [$where, $params] = $this->activeScope($query, $department);
+        [$where, $params] = $this->activeScope($query, $department, $status);
         $sql .= ' WHERE ' . implode(' AND ', $where);
         $sql .= ' ORDER BY e.role = "admin" DESC, e.role = "manager" DESC, e.name ASC';
 
@@ -146,9 +147,9 @@ final class UserRepository
     }
 
     /** Total count matching the same filters as listActiveWithManager() — for pagination. */
-    public function countActiveWithManager(string $query = '', string $department = ''): int
+    public function countActiveWithManager(string $query = '', string $department = '', string $status = 'active'): int
     {
-        [$where, $params] = $this->activeScope($query, $department);
+        [$where, $params] = $this->activeScope($query, $department, $status);
         $sql = 'SELECT COUNT(*) c FROM users e WHERE ' . implode(' AND ', $where);
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
@@ -331,15 +332,6 @@ final class UserRepository
 
         $stmt = $this->db->prepare('UPDATE users SET manager_id = NULL WHERE manager_id = ?');
         $stmt->execute([$id]);
-    }
-
-    public function listInactive(): array
-    {
-        $stmt = $this->db->query("
-            SELECT id, name, employee_code, email, role, department
-            FROM users WHERE is_active = 0 ORDER BY name
-        ");
-        return $stmt->fetchAll();
     }
 
     /** Reverses softDelete(): strips the id-suffix it added to email/employee_code and flips
