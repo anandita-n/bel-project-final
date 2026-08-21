@@ -578,8 +578,6 @@ th {
     letter-spacing: .03em;
     border-color: var(--border);
 }
-tbody tr:hover td { background: #eef4f9; }
-
 .table-bordered-heading { border: 1px solid var(--border-light); }
 .table-bordered-heading th, .table-bordered-heading td { border: none; }
 .table-bordered-heading th { border-bottom: 1px solid var(--border); }
