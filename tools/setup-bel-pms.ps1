@@ -1,20 +1,15 @@
 <#
 .SYNOPSIS
-    Sets up BEL PMS from scratch on a fresh XAMPP install: clones the repo, writes the
-    DB config, creates the database, and runs the schema + every migration in order.
+    Sets up BEL PMS's database on a fresh XAMPP install: writes the DB config, creates
+    the database, and runs the schema + every migration in order.
 
 .DESCRIPTION
-    Run this from a PowerShell prompt on the target machine. It assumes XAMPP is already
+    Run this from inside an already-cloned copy of the repo (it lives at tools\setup-bel-pms.ps1
+    and works out the project root from its own location). It assumes XAMPP is already
     installed and MySQL is running (or it will start it for you if -StartXampp is passed).
 
 .PARAMETER XamppPath
     Root of the XAMPP install. Auto-detected from common install locations if omitted.
-
-.PARAMETER FolderName
-    Folder name to clone into under htdocs (also becomes the URL path). Default: bel-pms
-
-.PARAMETER RepoUrl
-    Git URL to clone. Default: the bel-project-final repo.
 
 .PARAMETER DbName
     Database name to create and use. Default: bel_pms
@@ -38,13 +33,11 @@
     .\setup-bel-pms.ps1
 
 .EXAMPLE
-    .\setup-bel-pms.ps1 -FolderName bel-pms-final -SeedDemoData -StartXampp
+    .\setup-bel-pms.ps1 -SeedDemoData -StartXampp
 #>
 
 param(
     [string]$XamppPath,
-    [string]$FolderName = "bel-pms",
-    [string]$RepoUrl = "https://github.com/anandita-n/bel-project-final.git",
     [string]$DbName = "bel_pms",
     [string]$DbUser = "root",
     [string]$DbPass = "",
@@ -64,10 +57,17 @@ function Fail($msg) {
     exit 1
 }
 
+# This script lives at <project root>\tools\setup-bel-pms.ps1.
+$projectDir = Split-Path -Parent $PSScriptRoot
+
 # ---------------------------------------------------------------------------
 # 0. Locate XAMPP and check prerequisites
 # ---------------------------------------------------------------------------
 Write-Step "Checking prerequisites"
+
+if (-not (Test-Path (Join-Path $projectDir "sql\schema.sql"))) {
+    Fail "Couldn't find sql\schema.sql relative to this script. Run it from inside the cloned repo (tools\setup-bel-pms.ps1) without moving it elsewhere."
+}
 
 if (-not $XamppPath) {
     $candidates = @("C:\xampp", "D:\xampp", "C:\Program Files\xampp", "C:\Program Files (x86)\xampp")
@@ -82,8 +82,6 @@ if (-not (Test-Path $XamppPath)) {
     Fail "XAMPP not found at '$XamppPath'. Pass -XamppPath if it's installed elsewhere."
 }
 
-$htdocs      = Join-Path $XamppPath "htdocs"
-$projectDir  = Join-Path $htdocs $FolderName
 $mysqlExe    = Join-Path $XamppPath "mysql\bin\mysql.exe"
 $phpExe      = Join-Path $XamppPath "php\php.exe"
 $xamppStart  = Join-Path $XamppPath "xampp_start.exe"
@@ -93,9 +91,6 @@ if (-not (Test-Path $mysqlExe)) {
 }
 if (-not (Test-Path $phpExe)) {
     Fail "PHP not found at '$phpExe'. Is this really an XAMPP install?"
-}
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-    Fail "git is not on PATH. Install Git for Windows first: https://git-scm.com/download/win"
 }
 
 Write-Host "XAMPP path : $XamppPath"
@@ -116,24 +111,7 @@ if ($StartXampp) {
 }
 
 # ---------------------------------------------------------------------------
-# 2. Clone (or update) the repo
-# ---------------------------------------------------------------------------
-Write-Step "Cloning repository"
-
-if (Test-Path (Join-Path $projectDir ".git")) {
-    Write-Host "Repo already exists at $projectDir - pulling latest instead of cloning."
-    Push-Location $projectDir
-    git pull
-    Pop-Location
-} elseif (Test-Path $projectDir) {
-    Fail "$projectDir already exists and isn't a git repo. Remove it or pick a different -FolderName."
-} else {
-    git clone $RepoUrl $projectDir
-    if ($LASTEXITCODE -ne 0) { Fail "git clone failed." }
-}
-
-# ---------------------------------------------------------------------------
-# 3. Write src/config.php (gitignored on purpose - holds DB credentials)
+# 2. Write src/config.php (gitignored on purpose - holds DB credentials)
 # ---------------------------------------------------------------------------
 Write-Step "Writing src/config.php"
 
@@ -157,7 +135,7 @@ Set-Content -Path $configPath -Value $configContent -Encoding utf8
 Write-Host "Wrote $configPath"
 
 # ---------------------------------------------------------------------------
-# 4. Create the database
+# 3. Create the database
 # ---------------------------------------------------------------------------
 Write-Step "Creating database '$DbName' (if it doesn't already exist)"
 
@@ -179,12 +157,11 @@ if ($LASTEXITCODE -eq 0 -and $existingTableCheck -and [int]$existingTableCheck -
 if ($LASTEXITCODE -ne 0) { Fail "Could not create database. Check DB credentials / that MySQL is running." }
 
 # ---------------------------------------------------------------------------
-# 5. Load schema.sql, then every numbered migration in order
+# 4. Load schema.sql, then every numbered migration in order
 # ---------------------------------------------------------------------------
 Write-Step "Loading schema and migrations"
 
 $sqlDir = Join-Path $projectDir "sql"
-if (-not (Test-Path $sqlDir)) { Fail "No sql folder found in the repo - did the clone succeed?" }
 
 function Invoke-SqlFile($file) {
     Write-Host "  -> $($file.Name)"
@@ -204,7 +181,7 @@ $migrations = Get-ChildItem $sqlDir -Filter "0*.sql" |
 foreach ($m in $migrations) { Invoke-SqlFile $m }
 
 # ---------------------------------------------------------------------------
-# 6. Optionally seed realistic demo data
+# 5. Optionally seed realistic demo data
 # ---------------------------------------------------------------------------
 if ($SeedDemoData) {
     Write-Step "Seeding demo data"
@@ -224,11 +201,12 @@ if ($SeedDemoData) {
 }
 
 # ---------------------------------------------------------------------------
-# 7. Done
+# 6. Done
 # ---------------------------------------------------------------------------
 Write-Step "Setup complete"
 
-$url = "http://localhost/$FolderName/login.php"
+$folderName = Split-Path -Leaf $projectDir
+$url = "http://localhost/$folderName/login.php"
 Write-Host "App URL : $url"
 Write-Host "Admin   : admin@bel.co.in / admin123 (change this after first login)"
 if ($SeedDemoData) {
