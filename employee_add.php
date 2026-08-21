@@ -149,12 +149,12 @@ require 'includes/layout_top.php';
                 </div>
                 <div class="field">
                     <label>Email <span class="required-mark">*</span></label>
-                    <input type="email" name="email" id="createEmailInput" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+                    <input type="email" name="email" id="createEmailInput" autocomplete="off" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
                     <div class="field-error-hint" id="createEmailError" style="display:none;">Enter a valid email address.</div>
                 </div>
                 <div class="field">
                     <label>Temporary Password <span class="required-mark">*</span></label>
-                    <input type="password" name="password" id="createPasswordInput" required>
+                    <input type="password" name="password" id="createPasswordInput" autocomplete="new-password" required>
                     <div id="createPasswordChecklist"></div>
                 </div>
             </div>

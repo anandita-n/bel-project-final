@@ -960,8 +960,11 @@ tbody tr:hover td { background: #eef4f9; }
    actually seen from the window's edges. Two widths needed since the collapsed (52px) and open
    (212px) sidebar states need different compensation. */
 .pa-page-wrap { max-width: 1100px; margin-left: auto; margin-right: auto; }
-.site-sidebar.collapsed ~ .main .pa-page-wrap { margin-left: calc((100% - 1100px) / 2 - 26px); }
-.site-sidebar:not(.collapsed) ~ .main .pa-page-wrap { margin-left: calc((100% - 1100px) / 2 - 106px); }
+/* max(24px, ...) so a window too narrow to fit the 1100px box never sends this negative -
+   a negative margin-left would shove the content left, underneath the sidebar. Below that
+   width it just sits flush with a plain 24px gutter instead of trying to stay centered. */
+.site-sidebar.collapsed ~ .main .pa-page-wrap { margin-left: max(24px, calc((100% - 1100px) / 2 - 26px)); }
+.site-sidebar:not(.collapsed) ~ .main .pa-page-wrap { margin-left: max(24px, calc((100% - 1100px) / 2 - 106px)); }
 .pa-page { max-width: 1100px; }
 .pa-header { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light); }
 .pa-header h2 { margin: 0 0 4px; font-size: 21px; color: var(--text); }
@@ -988,8 +991,8 @@ tbody tr:hover td { background: #eef4f9; }
 /* Create Staff: centered like Create Project's .pa-page-wrap, for a consistent look across the
    site's "add" forms — same sidebar-width compensation, see the comment above .pa-page-wrap. */
 .pa-page-narrow { max-width: 1100px; margin-left: auto; margin-right: auto; }
-.site-sidebar.collapsed ~ .main .pa-page-narrow { margin-left: calc((100% - 1100px) / 2 - 26px); }
-.site-sidebar:not(.collapsed) ~ .main .pa-page-narrow { margin-left: calc((100% - 1100px) / 2 - 106px); }
+.site-sidebar.collapsed ~ .main .pa-page-narrow { margin-left: max(24px, calc((100% - 1100px) / 2 - 26px)); }
+.site-sidebar:not(.collapsed) ~ .main .pa-page-narrow { margin-left: max(24px, calc((100% - 1100px) / 2 - 106px)); }
 
 /* Create Staff: wider box padding + larger input boxes than the site's default compact forms. */
 .pa-form-spacious .pa-section { padding: 28px 32px; background: none; border: none; border-radius: 0; }
