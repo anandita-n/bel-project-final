@@ -93,6 +93,16 @@ if (-not (Test-Path $phpExe)) {
     Fail "PHP not found at '$phpExe'. Is this really an XAMPP install?"
 }
 
+# Apache only serves files under XAMPP's htdocs - if this repo was cloned somewhere else
+# (e.g. C:\project\bel-pms instead of C:\xampp\htdocs\bel-pms), everything below would still
+# "succeed" but the site would 404. Catch that now instead of after the database is set up.
+$htdocsPath = Join-Path $XamppPath "htdocs"
+$projectDirFull = (Resolve-Path $projectDir).Path
+$htdocsPathFull = (Resolve-Path $htdocsPath -ErrorAction SilentlyContinue).Path
+if (-not $htdocsPathFull -or -not $projectDirFull.StartsWith($htdocsPathFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+    Fail "This repo is at '$projectDirFull', which isn't inside XAMPP's htdocs ('$htdocsPath'). Apache can't serve it from here. Move (or re-clone) this folder into $htdocsPath and run the script from there instead."
+}
+
 Write-Host "XAMPP path : $XamppPath"
 Write-Host "Project dir: $projectDir"
 Write-Host "Database   : $DbName"
