@@ -1866,14 +1866,6 @@ tbody tr:hover td { background: #eef4f9; }
 .site-sidebar.collapsed ~ .main .emp-profile-page { margin-left: max(24px, calc((100% - 1200px) / 2 - 26px)); }
 .site-sidebar:not(.collapsed) ~ .main .emp-profile-page { margin-left: max(24px, calc((100% - 1200px) / 2 - 106px)); }
 
-/* Directory listing pages (employees.php's department drill-down): without this, .panel-table
-   has no max-width and stretches edge-to-edge on wide windows, so an empty result (or a table
-   with few columns) ends up centered in the middle of a huge box, far from the sidebar instead
-   of near it. Centered the same way as .emp-profile-page/.pa-page-wrap above. */
-.list-page-wrap { max-width: 1200px; margin-left: auto; margin-right: auto; }
-.site-sidebar.collapsed ~ .main .list-page-wrap { margin-left: max(24px, calc((100% - 1200px) / 2 - 26px)); }
-.site-sidebar:not(.collapsed) ~ .main .list-page-wrap { margin-left: max(24px, calc((100% - 1200px) / 2 - 106px)); }
-
 .emp-profile-header { display: flex; align-items: flex-start; gap: 24px; padding: 32px 0 24px; }
 .emp-profile-photo-col { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; }
 .emp-profile-avatar { width: 136px; height: 136px; border-radius: 0; font-size: 44px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; object-fit: cover; }

@@ -68,7 +68,6 @@ require 'includes/layout_top.php';
 <?php endif; ?>
 
 <?php else: ?>
-<div class="list-page-wrap">
 <div class="breadcrumb"><a href="employees.php">Staff</a> / <?= htmlspecialchars($department) ?></div>
 
 <div class="panel panel-table">
@@ -108,7 +107,6 @@ require 'includes/layout_top.php';
     </div>
 </div>
 <div id="employeesPagination" class="pagination-bar" style="<?= $totalPages <= 1 ? 'display:none;' : '' ?>"></div>
-</div>
 <?php endif; ?>
 
 <script>
