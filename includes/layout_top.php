@@ -14,7 +14,7 @@ $sidebarSection = null;
 // those are directory-management actions, not profile-page actions — so reserving the column
 // there just pushes the page off-center. It still shows when browsing someone else's profile
 // (reached from the Directory, where "back to the list" navigation is genuinely useful).
-if ($current_file === 'employees.php' || $current_file === 'employee_add.php'
+if ($current_file === 'employees.php' || $current_file === 'employee_add.php' || $current_file === 'employees_deactivated.php'
     || ($current_file === 'employee_detail.php' && empty($is_own_profile))) {
     $sidebarSection = 'employees';
 } elseif (in_array($current_file, array_merge(['projects.php', 'project_detail.php'], $projectCreateFiles), true)) {
@@ -58,7 +58,7 @@ $departmentRowIsActive = $current_file !== 'project_detail.php';
         <div class="site-nav-inner">
             <div class="site-nav-brand"><img class="site-logo" src="assets/img/bel-logo-nav.png" alt="Bharat Electronics Limited"></div>
             <?php if ($u['role'] === 'admin'): ?>
-            <a href="employees.php" class="<?= in_array($current_file, ['employees.php','employee_detail.php','employee_add.php'], true) ? 'active' : '' ?>">Staff</a>
+            <a href="employees.php" class="<?= in_array($current_file, ['employees.php','employee_detail.php','employee_add.php','employees_deactivated.php'], true) ? 'active' : '' ?>">Staff</a>
             <?php endif; ?>
             <a href="projects.php" class="<?= in_array($current_file, array_merge(['projects.php','project_detail.php'], $projectCreateFiles), true) ? 'active' : '' ?>">Projects</a>
             <a href="organisation.php" class="<?= $current_file === 'organisation.php' ? 'active' : '' ?>">Organisation</a>
@@ -115,6 +115,10 @@ $departmentRowIsActive = $current_file !== 'project_detail.php';
             <a href="employee_add.php" class="sidebar-link sidebar-divider <?= $current_file === 'employee_add.php' ? 'active' : '' ?>">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
                 <span class="sidebar-label">Create Staff</span>
+            </a>
+            <a href="employees_deactivated.php" class="sidebar-link <?= $current_file === 'employees_deactivated.php' ? 'active' : '' ?>">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>
+                <span class="sidebar-label">Deactivated</span>
             </a>
             <?php endif; ?>
         </aside>

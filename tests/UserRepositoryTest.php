@@ -85,4 +85,65 @@ test_suite('UserRepository (hierarchy search)', function () {
         $row = $repo->findById($id);
         assert_equals(0, (int)$row['must_change_password']);
     });
+
+    test('softDelete deactivates, mangles email/code, and clears manager_id on direct reports', function () use ($repo) {
+        $mgr = make_user('Soft Delete Manager', 'BEL-SD01', 'manager');
+        make_user('Soft Delete Report', 'BEL-SD02', 'employee', $mgr);
+
+        $repo->softDelete($mgr);
+
+        $row = $repo->findById($mgr);
+        assert_equals(0, (int)$row['is_active']);
+        assert_true(str_ends_with($row['email'], '.deleted' . $mgr));
+        assert_true(str_ends_with($row['employee_code'], '-DEL' . $mgr));
+        assert_null($repo->findActiveById($mgr));
+
+        $report = $repo->searchOneWithHierarchy('BEL-SD02');
+        assert_null($report['manager']);
+    });
+
+    test('reactivate restores is_active and the original email/employee_code', function () use ($repo) {
+        $id = make_user('Reactivate Me', 'BEL-RA01');
+        $original = $repo->findById($id);
+        $repo->softDelete($id);
+
+        $repo->reactivate($id);
+
+        $row = $repo->findById($id);
+        assert_equals(1, (int)$row['is_active']);
+        assert_equals($original['email'], $row['email']);
+        assert_equals($original['employee_code'], $row['employee_code']);
+    });
+
+    test('reactivate refuses when another active employee has taken the original email/code', function () use ($repo) {
+        $id = make_user('Reactivate Conflict', 'BEL-RA02');
+        $original = $repo->findById($id);
+        $repo->softDelete($id);
+
+        // A new hire reuses the freed-up email/code, exactly what softDelete's mangling enables.
+        $repo->create([
+            'employee_code' => $original['employee_code'], 'name' => 'New Hire', 'email' => $original['email'],
+            'password' => 'x', 'role' => 'employee', 'department' => null, 'manager_id' => null,
+            'stream' => null, 'telephone' => null, 'user_group' => null,
+        ]);
+
+        $threw = false;
+        try {
+            $repo->reactivate($id);
+        } catch (\RuntimeException $e) {
+            $threw = true;
+        }
+        assert_true($threw, 'Expected reactivate() to throw on email/code conflict');
+        assert_null($repo->findActiveById($id), 'Should remain inactive after a failed reactivate');
+    });
+
+    test('listInactive only returns deactivated employees', function () use ($repo) {
+        $active = make_user('Stays Active', 'BEL-LI01');
+        $inactive = make_user('Goes Inactive', 'BEL-LI02');
+        $repo->softDelete($inactive);
+
+        $ids = array_column($repo->listInactive(), 'id');
+        assert_contains($inactive, $ids);
+        assert_true(!in_array($active, $ids, true));
+    });
 });

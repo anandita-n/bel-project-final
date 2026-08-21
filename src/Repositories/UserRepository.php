@@ -333,6 +333,45 @@ final class UserRepository
         $stmt->execute([$id]);
     }
 
+    public function listInactive(): array
+    {
+        $stmt = $this->db->query("
+            SELECT id, name, employee_code, email, role, department
+            FROM users WHERE is_active = 0 ORDER BY name
+        ");
+        return $stmt->fetchAll();
+    }
+
+    /** Reverses softDelete(): strips the id-suffix it added to email/employee_code and flips
+     *  is_active back on. Throws if another active employee has since taken over that original
+     *  email/code (softDelete frees them up specifically so a new hire can reuse them) - the
+     *  caller must resolve that manually before the employee can be restored. */
+    public function reactivate(int $id): void
+    {
+        $stmt = $this->db->prepare('SELECT email, employee_code FROM users WHERE id = ? AND is_active = 0');
+        $stmt->execute([$id]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            throw new \RuntimeException('Employee not found or already active.');
+        }
+
+        $emailSuffix = '.deleted' . $id;
+        $codeSuffix = '-DEL' . $id;
+        $email = str_ends_with($row['email'], $emailSuffix)
+            ? substr($row['email'], 0, -strlen($emailSuffix)) : $row['email'];
+        $code = str_ends_with($row['employee_code'], $codeSuffix)
+            ? substr($row['employee_code'], 0, -strlen($codeSuffix)) : $row['employee_code'];
+
+        $conflict = $this->db->prepare('SELECT id FROM users WHERE is_active = 1 AND (email = ? OR employee_code = ?)');
+        $conflict->execute([$email, $code]);
+        if ($conflict->fetch()) {
+            throw new \RuntimeException("Can't restore this employee - their original email or employee ID is now used by another active employee.");
+        }
+
+        $stmt = $this->db->prepare('UPDATE users SET is_active = 1, email = ?, employee_code = ? WHERE id = ?');
+        $stmt->execute([$email, $code, $id]);
+    }
+
     public function updateManager(int $employeeId, ?int $managerId): void
     {
         $stmt = $this->db->prepare('UPDATE users SET manager_id = ? WHERE id = ?');
