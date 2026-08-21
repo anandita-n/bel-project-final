@@ -37,6 +37,8 @@ if (!$project) {
 }
 
 $canManage = $u['role'] === 'admin' || (int)$u['id'] === (int)$project['manager_id'];
+// Every action in this file mutates task data — archived projects are read-only.
+require_project_active($project);
 
 function render_task(array $t, TaskRepository $tasks, TaskCommentRepository $commentsRepo, TaskAttachmentRepository $attachmentsRepo): array
 {
@@ -62,6 +64,8 @@ function render_task(array $t, TaskRepository $tasks, TaskCommentRepository $com
         'subtasks' => $subtasks,
         'comment_count' => $commentCount,
         'attachment_count' => $attachmentCount,
+        'created_at' => $t['created_at'],
+        'updated_at' => $t['updated_at'],
     ];
 }
 
@@ -72,6 +76,9 @@ if ($action === 'create') {
     $title = trim($body['title'] ?? '');
     if ($title === '') {
         json_error('Task title is required.');
+    }
+    if (mb_strlen($title) > 200) {
+        json_error('Task title must be 200 characters or fewer.');
     }
     $priority = in_array($body['priority'] ?? '', ['low', 'medium', 'high'], true) ? $body['priority'] : 'medium';
 
@@ -114,6 +121,9 @@ if ($action === 'create') {
     if ($title === '') {
         json_error('Task title is required.');
     }
+    if (mb_strlen($title) > 200) {
+        json_error('Task title must be 200 characters or fewer.');
+    }
     $priority = in_array($body['priority'] ?? '', ['low', 'medium', 'high'], true) ? $body['priority'] : 'medium';
 
     $newAssignedTo = $body['assigned_to'] ?? null;
@@ -142,7 +152,7 @@ if ($action === 'create') {
         notify_project_event((int)$newAssignedTo, (int)$u['id'], $projectId, $taskId, 'task_assigned', $u['name'] . ' assigned you to "' . $title . '"');
     }
     if (($newDueDate ?: null) !== ($task['due_date'] ?: null)) {
-        foreach ($newAssignees ?? ($newAssignedTo ? [(int)$newAssignedTo] : []) as $notifyId) {
+        foreach ($newAssignees ?? $oldAssigneeIds as $notifyId) {
             notify_project_event((int)$notifyId, (int)$u['id'], $projectId, $taskId, 'due_date_changed', $u['name'] . ' changed the due date on "' . $title . '"');
         }
     }
@@ -267,7 +277,7 @@ if ($action === 'create') {
     if (!$task) {
         json_error('Task not found.', 404);
     }
-    if (!$canManage && !$tasks->isAssignee($taskId, (int)$u['id'])) {
+    if (!$canManage) {
         json_error('Not permitted to update this task.', 403);
     }
     $title = trim($body['title'] ?? '');
@@ -282,7 +292,7 @@ if ($action === 'create') {
     if (!$task) {
         json_error('Task not found.', 404);
     }
-    if (!$canManage && !$tasks->isAssignee($taskId, (int)$u['id'])) {
+    if (!$canManage) {
         json_error('Not permitted to update this task.', 403);
     }
     $subtaskId = (int)($body['subtask_id'] ?? 0);
@@ -295,7 +305,7 @@ if ($action === 'create') {
     if (!$task) {
         json_error('Task not found.', 404);
     }
-    if (!$canManage && !$tasks->isAssignee($taskId, (int)$u['id'])) {
+    if (!$canManage) {
         json_error('Not permitted to update this task.', 403);
     }
     $subtaskId = (int)($body['subtask_id'] ?? 0);

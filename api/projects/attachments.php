@@ -8,6 +8,14 @@ use App\Repositories\TaskAttachmentRepository;
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB
 const ALLOWED_EXTENSIONS = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'txt', 'csv', 'zip'];
+const ALLOWED_MIME_TYPES = [
+    'application/pdf', 'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain', 'text/csv', 'image/png', 'image/jpeg', 'image/gif',
+    'application/zip', 'application/x-zip-compressed',
+];
 
 $u = require_login_json();
 $projects = new ProjectRepository();
@@ -38,7 +46,8 @@ if ($action === 'download') {
     // find() is scoped to (task_id, project_id) together, so a mismatched project_id
     // (guessed or wrong) simply fails to find the task rather than leaking it.
     $task = $tasks->find((int)$attachment['task_id'], (int)($_GET['project_id'] ?? 0));
-    if (!$task || !$projects->userHasAccess((int)$task['project_id'], $u)) {
+    $attachmentProject = $task ? $projects->findById((int)$task['project_id']) : null;
+    if (!$task || !$attachmentProject || !$projects->hasFullAccess($attachmentProject, $u)) {
         http_response_code(403);
         exit('Not permitted.');
     }
@@ -62,15 +71,19 @@ $project = $projectId ? $projects->findById($projectId) : null;
 if (!$project) {
     json_error('Project not found.', 404);
 }
-if (!$projects->userHasAccess($projectId, $u)) {
+if (!$projects->hasFullAccess($project, $u)) {
     json_error('Not permitted.', 403);
 }
 $canManage = $u['role'] === 'admin' || (int)$u['id'] === (int)$project['manager_id'];
 
 if ($action === 'list_for_task') {
     $taskId = (int)($body['task_id'] ?? 0);
+    if (!$tasks->find($taskId, $projectId)) {
+        json_error('Task not found.', 404);
+    }
     json_out(['ok' => true, 'attachments' => array_map('render_attachment', $attachments->forTask($taskId))]);
 } elseif ($action === 'upload') {
+    require_project_active($project);
     $taskId = (int)($body['task_id'] ?? 0);
     $task = $tasks->find($taskId, $projectId);
     if (!$task) {
@@ -84,7 +97,10 @@ if ($action === 'list_for_task') {
         json_error('File is too large (10MB max).');
     }
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    if (!in_array($ext, ALLOWED_EXTENSIONS, true)) {
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    if (!in_array($ext, ALLOWED_EXTENSIONS, true) || !in_array($mime, ALLOWED_MIME_TYPES, true)) {
         json_error('File type not allowed.');
     }
 
@@ -97,7 +113,7 @@ if ($action === 'list_for_task') {
         json_error('Could not save the file.', 500);
     }
 
-    $attachmentId = $attachments->create($taskId, (int)$u['id'], $file['name'], $storedFilename, (int)$file['size'], $file['type'] ?: null);
+    $attachmentId = $attachments->create($taskId, (int)$u['id'], $file['name'], $storedFilename, (int)$file['size'], $mime ?: null);
 
     if (!empty($task['assigned_to'])) {
         notify_project_event((int)$task['assigned_to'], (int)$u['id'], $projectId, $taskId, 'attachment_uploaded', $u['name'] . ' uploaded "' . $file['name'] . '" to "' . $task['title'] . '"');
@@ -107,9 +123,16 @@ if ($action === 'list_for_task') {
     $created['uploader_name'] = $u['name'];
     json_out(['ok' => true, 'attachment' => render_attachment($created)]);
 } elseif ($action === 'delete') {
+    require_project_active($project);
     $id = (int)($body['id'] ?? 0);
     $attachment = $attachments->find($id);
     if (!$attachment) {
+        json_error('Attachment not found.', 404);
+    }
+    // Re-derive the attachment's real project from its task rather than trusting the
+    // caller-supplied project_id, so a manager of one project can't delete another's file.
+    $attachmentTask = $tasks->find((int)$attachment['task_id'], $projectId);
+    if (!$attachmentTask) {
         json_error('Attachment not found.', 404);
     }
     if (!$canManage && (int)$attachment['user_id'] !== (int)$u['id']) {

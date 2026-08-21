@@ -5,11 +5,6 @@ use App\Repositories\AssetRepository;
 test_suite('AssetRepository', function () {
     $repo = new AssetRepository();
 
-    test('nextSuggestedCode returns a BEL-AST-### code', function () use ($repo) {
-        $code = $repo->nextSuggestedCode();
-        assert_true((bool)preg_match('/^BEL-AST-\d{3}$/', $code), "Got: $code");
-    });
-
     test('codeExists is true only after the code is created', function () use ($repo) {
         assert_false($repo->codeExists('BEL-AST-TESTX'));
         $repo->create(['asset_code' => 'BEL-AST-TESTX', 'name' => 'Test Laptop', 'category' => 'laptop']);

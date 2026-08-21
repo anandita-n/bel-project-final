@@ -31,7 +31,8 @@ final class NotificationRepository
     public function forUser(int $userId, int $limit = 50): array
     {
         $stmt = $this->db->prepare('
-            SELECT n.*, p.project_code, p.name AS project_name, t.title AS task_title, a.name AS actor_name
+            SELECT n.*, p.project_code, p.name AS project_name, t.title AS task_title,
+                a.name AS actor_name, a.role AS actor_role, a.photo_filename AS actor_photo_filename
             FROM notifications n
             LEFT JOIN projects p ON p.id = n.project_id
             LEFT JOIN tasks t ON t.id = n.task_id
@@ -41,6 +42,28 @@ final class NotificationRepository
             LIMIT ' . (int)$limit . '
         ');
         $stmt->execute([$userId]);
+        return $stmt->fetchAll();
+    }
+
+    /** Newest first, for the project Overview tab's "Latest updates" feed. Broadcast events (e.g.
+     *  a status change) insert one row per recipient with identical message+timestamp — grouped
+     *  here so they collapse into a single feed entry instead of repeating per member. Also joins
+     *  one recipient's name so "assigned you to"/"mentioned you on" phrasing can be de-"you"'d. */
+    public function forProject(int $projectId, int $limit = 8): array
+    {
+        $stmt = $this->db->prepare('
+            SELECT n.type, n.message, n.created_at,
+                a.id AS actor_id, a.name AS actor_name, a.role AS actor_role, a.photo_filename AS actor_photo_filename,
+                MIN(u.name) AS recipient_name
+            FROM notifications n
+            LEFT JOIN users a ON a.id = n.actor_id
+            LEFT JOIN users u ON u.id = n.user_id
+            WHERE n.project_id = ? AND n.type != "forum_comment"
+            GROUP BY n.message, n.created_at
+            ORDER BY n.created_at DESC
+            LIMIT ' . (int)$limit . '
+        ');
+        $stmt->execute([$projectId]);
         return $stmt->fetchAll();
     }
 
@@ -71,5 +94,19 @@ final class NotificationRepository
     {
         $stmt = $this->db->prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0');
         $stmt->execute([$userId]);
+    }
+
+    /** Scoped to $userId so one recipient can't mark another's notification read. */
+    public function markOneRead(int $id, int $userId): void
+    {
+        $stmt = $this->db->prepare('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?');
+        $stmt->execute([$id, $userId]);
+    }
+
+    /** Scoped to $userId so one recipient can't delete another's notification. */
+    public function deleteOne(int $id, int $userId): void
+    {
+        $stmt = $this->db->prepare('DELETE FROM notifications WHERE id = ? AND user_id = ?');
+        $stmt->execute([$id, $userId]);
     }
 }

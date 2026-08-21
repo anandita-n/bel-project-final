@@ -7,7 +7,7 @@
     const cfg = ProjectUI.cfg;
     const state = ProjectUI.state;
 
-    const filters = { search: '', status: 'all', priority: 'all', assignee: 'all', overdueOnly: false };
+    const filters = { search: '', status: 'all', priority: 'all', assignee: 'all', overdueOnly: false, dateRange: 'all' };
     const sortState = { key: 'due_date', dir: 'asc' };
     const selectedIds = new Set();
 
@@ -36,6 +36,8 @@
         document.querySelectorAll('.task-filter-status').forEach(el => { el.value = filters.status; });
         document.querySelectorAll('.task-filter-priority').forEach(el => { el.value = filters.priority; });
         document.querySelectorAll('.task-filter-assignee').forEach(el => { el.value = filters.assignee; });
+        document.querySelectorAll('.task-filter-mine').forEach(el => { el.value = filters.assignee === String(cfg.currentUserId) ? 'mine' : 'all'; });
+        document.querySelectorAll('.task-filter-date').forEach(el => { el.value = filters.dateRange; });
     }
 
     const today = () => new Date().toISOString().slice(0, 10);
@@ -50,6 +52,11 @@
             if (filters.assignee === 'unassigned' && taskAssigneeIds.length) return false;
             if (filters.assignee !== 'all' && filters.assignee !== 'unassigned' && taskAssigneeIds.indexOf(parseInt(filters.assignee, 10)) === -1) return false;
             if (filters.overdueOnly && !(t.due_date && t.due_date < today() && t.status !== 'done')) return false;
+            if (filters.dateRange !== 'all') {
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - parseInt(filters.dateRange, 10));
+                if (new Date(t.created_at) < cutoff) return false;
+            }
             return true;
         });
     }
@@ -67,6 +74,8 @@
         if (ev.target.classList.contains('task-filter-status')) { filters.status = ev.target.value; refreshAll(); }
         if (ev.target.classList.contains('task-filter-priority')) { filters.priority = ev.target.value; refreshAll(); }
         if (ev.target.classList.contains('task-filter-assignee')) { filters.assignee = ev.target.value; refreshAll(); }
+        if (ev.target.classList.contains('task-filter-mine')) { filters.assignee = ev.target.value === 'mine' ? String(cfg.currentUserId) : 'all'; refreshAll(); }
+        if (ev.target.classList.contains('task-filter-date')) { filters.dateRange = ev.target.value; refreshAll(); }
     });
 
     /* ---------- List view ---------- */
@@ -83,6 +92,16 @@
         });
     }
 
+    function taskListHeadHTML(includeSelectAll) {
+        const headers = [
+            { label: 'Title' }, { label: 'Assignee' }, { label: 'Status' }, { label: 'Priority' },
+            { label: 'Created' }, { label: 'Updated' }, { label: 'Due' },
+        ];
+        let html = (cfg.canManage && includeSelectAll ? '<label class="task-list-check"><input type="checkbox" id="taskSelectAll"></label>' : (cfg.canManage ? '<span></span>' : ''));
+        headers.forEach(h => { html += '<span>' + h.label + '</span>'; });
+        return html;
+    }
+
     const PRIORITY_ICONS = {
         high: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>',
         medium: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/></svg>',
@@ -96,16 +115,46 @@
         return '<span class="grid-status-badge grid-status-' + status + '">' + escapeHtml(label) + '</span>';
     }
 
+    /** True if this user currently has a project_members row (or is the manager) — state.members
+     *  only ever holds current members, so this reflects live membership, not history. */
+    function isCurrentMember(userId) {
+        return state.members.some(function (m) { return m.id === userId; });
+    }
+
+    /** Assignee column for the Tasks list. Removing someone from Members never touches a task's
+     *  assignee history (see confirmRemoveMember/removeMember in project-detail.js) — so a task
+     *  can still be assigned to someone who isn't a current member anymore. For an already-done
+     *  task that's the correct, permanent historical record and gets no special treatment. For a
+     *  still-open task it's flagged here so a manager notices and can reassign — clicking anywhere
+     *  in the row (including this badge) already opens the task drawer, whose Assignees picker is
+     *  scoped to current members only, so that's where the actual reassignment happens. */
+    function assigneeCellHTML(t) {
+        const assignees = t.assignees || [];
+        if (!assignees.length) return '<span class="avatar-stack-empty">Unassigned</span>';
+        const flagStale = t.status !== 'done';
+        return '<div class="assignee-name-list">' + assignees.map(function (p) {
+            const stale = flagStale && !isCurrentMember(p.id);
+            return '<span class="assignee-name-row' + (stale ? ' assignee-name-row-stale' : '') + '">' +
+                avatarHTML(p, 'avatar-sm') +
+                '<span class="assignee-name-col">' +
+                '<span class="assignee-name-text">' + escapeHtml(p.name) + '</span>' +
+                (stale ? '<span class="assignee-stale-badge" title="No longer an active project member">Not on team · Reassign</span>' : '') +
+                '</span>' +
+                '</span>';
+        }).join('') + '</div>';
+    }
+
     function taskListRowHTML(t) {
         const assignees = t.assignees || [];
         return '<div class="task-list-row" data-task-id="' + t.id + '">' +
             (cfg.canManage ? '<label class="task-list-check"><input type="checkbox" class="task-select-checkbox" data-task-id="' + t.id + '"' + (selectedIds.has(t.id) ? ' checked' : '') + '></label>' : '') +
             '<span class="task-list-title">' + escapeHtml(t.title) + '</span>' +
-            '<span>' + ProjectUI.avatarStackHTML(assignees) + '</span>' +
+            '<span>' + assigneeCellHTML(t) + '</span>' +
             '<span>' + statusCellHTML(t.status, cfg.statusLabels[t.status] || t.status) + '</span>' +
             '<span>' + priorityCellHTML(t.priority) + '</span>' +
+            '<span class="task-list-date">' + escapeHtml(fmtDate(t.created_at.slice(0, 10))) + '</span>' +
+            '<span class="task-list-date">' + escapeHtml(fmtDate(t.updated_at.slice(0, 10))) + '</span>' +
             '<span>' + ProjectUI.dueBadgeHTML(t.due_date, t.status) + '</span>' +
-            (cfg.canManage ? '<button type="button" class="task-kebab" title="More actions">&#8942;</button>' : '<span></span>') +
             '</div>';
     }
 
@@ -122,22 +171,9 @@
             return;
         }
 
-        const headers = [
-            { key: 'title', label: 'Title' },
-            { key: 'assignee_name', label: 'Assignee' },
-            { key: 'status', label: 'Status' },
-            { key: 'priority', label: 'Priority' },
-            { key: 'due_date', label: 'Due' },
-        ];
-        let headHtml = (cfg.canManage ? '<label class="task-list-check"><input type="checkbox" id="taskSelectAll"></label>' : '');
-        headers.forEach(h => {
-            headHtml += '<span>' + h.label + '</span>';
-        });
-        headHtml += '<span></span>';
-
-        const bodyHtml = tasks.map(taskListRowHTML).join('');
-
-        container.innerHTML = '<div class="task-list' + (cfg.canManage ? ' has-select' : '') + '"><div class="task-list-head">' + headHtml + '</div>' + bodyHtml + '</div>';
+        container.innerHTML = '<div class="task-list' + (cfg.canManage ? ' has-select' : '') + '">' +
+            '<div class="task-list-head">' + taskListHeadHTML(true) + '</div>' +
+            tasks.map(taskListRowHTML).join('') + '</div>';
 
         const selectAll = container.querySelector('#taskSelectAll');
         if (selectAll) {
@@ -162,28 +198,8 @@
 
         container.querySelectorAll('.task-list-row').forEach(row => {
             const task = state.tasks.find(t => t.id === parseInt(row.dataset.taskId, 10));
-            const kebab = row.querySelector('.task-kebab');
-            if (kebab) {
-                initOverflowMenu(kebab, [{
-                    label: 'Delete', danger: true, onClick: function () {
-                        confirmModal('Delete this task?', function () {
-                            apiPost('api/projects/tasks.php', { action: 'delete', project_id: cfg.projectId, task_id: task.id })
-                                .then(function () {
-                                    state.tasks = state.tasks.filter(t => t.id !== task.id);
-                                    selectedIds.delete(task.id);
-                                    const card = document.querySelector('.task-card[data-task-id="' + task.id + '"]');
-                                    if (card) card.remove();
-                                    if (ProjectUI.refreshHeaderStats) ProjectUI.refreshHeaderStats();
-                                    if (ProjectUI.refreshMemberStats) ProjectUI.refreshMemberStats();
-                                    ProjectUI.refreshTaskVisibility();
-                                    refreshAll();
-                                }).catch(function (err) { alert(err.message); });
-                        }, { okLabel: 'Delete' });
-                    },
-                }]);
-            }
             row.addEventListener('click', function (ev) {
-                if (ev.target.closest('.task-kebab') || ev.target.closest('.overflow-menu') || ev.target.closest('.task-list-check')) return;
+                if (ev.target.closest('.task-list-check')) return;
                 if (task) ProjectUI.openTaskDrawer(task);
             });
         });

@@ -6,6 +6,17 @@ require_once __DIR__ . '/../includes/helpers.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
+// Prevent uncaught exceptions/errors (e.g. a DB constraint violation) from leaking a stack
+// trace, file paths, or raw SQL to the client — always respond with a generic JSON error.
+set_exception_handler(function (): void {
+    http_response_code(500);
+    echo json_encode(['error' => 'Server error.']);
+    exit;
+});
+set_error_handler(function (int $severity, string $message, string $file, int $line): bool {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
 function json_out($data, int $status = 200): void
 {
     http_response_code($status);

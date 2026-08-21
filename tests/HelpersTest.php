@@ -82,4 +82,38 @@ test_suite('helpers.php (pure functions)', function () {
         assert_false(is_valid_email('rahul @gmail.com'));
         assert_false(is_valid_email('rahul@gmail'));
     });
+
+    test('is_valid_full_name accepts real-world names', function () {
+        assert_true(is_valid_full_name('Rahul Sharma'));
+        assert_true(is_valid_full_name("O'Brien"));
+        assert_true(is_valid_full_name('Anne-Marie'));
+        assert_true(is_valid_full_name('Al'));
+        assert_true(is_valid_full_name('  Rahul Sharma  ')); // trims
+        assert_true(is_valid_full_name('José García'));
+        assert_true(is_valid_full_name('श्रुति शर्मा'));
+    });
+
+    test('is_valid_full_name rejects numbers, symbols, HTML, emoji, and bad spacing', function () {
+        assert_false(is_valid_full_name('Rahul123'));
+        assert_false(is_valid_full_name('Rahul@Sharma'));
+        assert_false(is_valid_full_name('<script>alert(1)</script>'));
+        assert_false(is_valid_full_name('Rahul 😀'));
+        assert_false(is_valid_full_name('Rahul  Sharma')); // double space
+        assert_false(is_valid_full_name('-Rahul')); // leading hyphen
+        assert_false(is_valid_full_name("'Rahul")); // leading apostrophe
+        assert_false(is_valid_full_name('R')); // too short
+        assert_false(is_valid_full_name(str_repeat('A', 101))); // too long
+        assert_false(is_valid_full_name(''));
+        assert_false(is_valid_full_name('   '));
+    });
+
+    test('is_valid_org_field allows blank and real values, rejects HTML/symbol noise', function () {
+        assert_true(is_valid_org_field(''));
+        assert_true(is_valid_org_field('Information Science'));
+        assert_true(is_valid_org_field('R&D'));
+        assert_true(is_valid_org_field('Tier-1, APAC'));
+        assert_false(is_valid_org_field('<script>alert(1)</script>'));
+        assert_false(is_valid_org_field('Group@#$%'));
+        assert_false(is_valid_org_field(str_repeat('A', 101)));
+    });
 });

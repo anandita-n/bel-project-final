@@ -19,18 +19,22 @@ $project = $projectId ? $projects->findById($projectId) : null;
 if (!$project) {
     json_error('Project not found.', 404);
 }
-if (!$projects->userHasAccess($projectId, $u)) {
+if (!$projects->hasFullAccess($project, $u)) {
     json_error('Not permitted.', 403);
 }
 $canManage = $u['role'] === 'admin' || (int)$u['id'] === (int)$project['manager_id'];
 
 if ($action === 'list_for_task') {
     $taskId = (int)($body['task_id'] ?? 0);
+    if (!$tasks->find($taskId, $projectId)) {
+        json_error('Task not found.', 404);
+    }
     json_out(['ok' => true, 'dependencies' => $deps->forTask($taskId)]);
 } elseif ($action === 'add') {
     if (!$canManage) {
         json_error('Not permitted to edit dependencies on this project.', 403);
     }
+    require_project_active($project);
     $taskId = (int)($body['task_id'] ?? 0);
     $relatedTaskId = (int)($body['related_task_id'] ?? 0);
     $type = $body['type'] ?? '';
@@ -51,9 +55,13 @@ if ($action === 'list_for_task') {
     if (!$canManage) {
         json_error('Not permitted to edit dependencies on this project.', 403);
     }
+    require_project_active($project);
     $taskId = (int)($body['task_id'] ?? 0);
     $relatedTaskId = (int)($body['related_task_id'] ?? 0);
     $type = $body['type'] ?? '';
+    if (!$tasks->find($taskId, $projectId) || !$tasks->find($relatedTaskId, $projectId)) {
+        json_error('Both tasks must belong to this project.', 404);
+    }
     $deps->remove($taskId, $relatedTaskId, $type);
     json_out(['ok' => true, 'dependencies' => $deps->forTask($taskId)]);
 } else {

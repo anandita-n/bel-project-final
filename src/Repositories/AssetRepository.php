@@ -35,12 +35,6 @@ final class AssetRepository
         $this->db = Database::connection();
     }
 
-    public function nextSuggestedCode(): string
-    {
-        $count = (int)$this->db->query('SELECT COUNT(*) c FROM assets')->fetch()['c'];
-        return 'BEL-AST-' . str_pad((string)($count + 1), 3, '0', STR_PAD_LEFT);
-    }
-
     public function codeExists(string $code): bool
     {
         $stmt = $this->db->prepare('SELECT id FROM assets WHERE asset_code = ?');
@@ -123,38 +117,88 @@ final class AssetRepository
         return $row ?: null;
     }
 
-    /** Powers both the full admin/manager list and an employee's "my assets" view
-     *  ($employeeId scopes results to assets assigned to that user only). */
-    public function search(string $q = '', string $category = '', string $status = '', ?int $employeeId = null): array
+    /** Shared WHERE/params builder so search()/countSearch() stay in sync. */
+    private function scope(string $q, string $category, string $status, string $department, ?int $employeeId): array
     {
-        $sql = '
-            SELECT a.*, u.name AS assignee_name, u.employee_code AS assignee_code
-            FROM assets a LEFT JOIN users u ON u.id = a.assigned_to
-            WHERE 1=1
-        ';
+        $where = [];
         $params = [];
 
         if ($q !== '') {
             $like = '%' . addcslashes($q, '%_\\') . '%';
-            $sql .= ' AND (a.asset_code LIKE ? OR a.name LIKE ? OR a.serial_number LIKE ? OR u.name LIKE ?)';
+            $where[] = '(a.asset_code LIKE ? OR a.name LIKE ? OR a.serial_number LIKE ? OR u.name LIKE ?)';
             array_push($params, $like, $like, $like, $like);
         }
         if ($category !== '') {
-            $sql .= ' AND a.category = ?';
+            $where[] = 'a.category = ?';
             $params[] = $category;
         }
         if ($status !== '') {
-            $sql .= ' AND a.status = ?';
+            $where[] = 'a.status = ?';
             $params[] = $status;
         }
+        if ($department !== '') {
+            if ($department === 'Unassigned') {
+                $where[] = "(a.department IS NULL OR a.department = '')";
+            } else {
+                $where[] = 'a.department = ?';
+                $params[] = $department;
+            }
+        }
         if ($employeeId !== null) {
-            $sql .= ' AND a.assigned_to = ?';
+            $where[] = 'a.assigned_to = ?';
             $params[] = $employeeId;
         }
 
+        return [$where, $params];
+    }
+
+    /** Powers both the full admin/manager list (optionally scoped to one department, paginated)
+     *  and an employee's "my assets" view ($employeeId scopes results to assets assigned to them). */
+    public function search(string $q = '', string $category = '', string $status = '', ?int $employeeId = null, string $department = '', int $page = 1, int $perPage = 0): array
+    {
+        $sql = '
+            SELECT a.id, a.asset_code, a.name, a.category, a.serial_number, a.assigned_to,
+                a.department, a.purchase_date, a.warranty_expiry, a.status,
+                u.name AS assignee_name, u.employee_code AS assignee_code
+            FROM assets a LEFT JOIN users u ON u.id = a.assigned_to
+        ';
+        [$where, $params] = $this->scope($q, $category, $status, $department, $employeeId);
+        if ($where) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
         $sql .= ' ORDER BY a.created_at DESC';
+
+        if ($perPage > 0) {
+            $perPage = min(max($perPage, 1), 200);
+            $page = max($page, 1);
+            $sql .= ' LIMIT ' . $perPage . ' OFFSET ' . (($page - 1) * $perPage);
+        }
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
+    }
+
+    public function countSearch(string $q = '', string $category = '', string $status = '', ?int $employeeId = null, string $department = ''): int
+    {
+        $sql = 'SELECT COUNT(*) c FROM assets a LEFT JOIN users u ON u.id = a.assigned_to';
+        [$where, $params] = $this->scope($q, $category, $status, $department, $employeeId);
+        if ($where) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int)$stmt->fetch()['c'];
+    }
+
+    public function departmentSummary(): array
+    {
+        $sql = "
+            SELECT COALESCE(NULLIF(department, ''), 'Unassigned') AS department, COUNT(*) AS asset_count
+            FROM assets
+            GROUP BY department
+            ORDER BY department
+        ";
+        return $this->db->query($sql)->fetchAll();
     }
 }

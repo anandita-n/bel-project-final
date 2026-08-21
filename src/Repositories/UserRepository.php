@@ -59,7 +59,7 @@ final class UserRepository
      *   'members'   — only the project's manager + current team members (for task assignment)
      *   'available' — active employees who are NOT already the manager or a team member (for adding new members)
      */
-    public function search(string $query, int $limit = 8, ?array $rolesOnly = null, ?array $projectScope = null): array
+    public function search(string $query, int $limit = 8, ?array $rolesOnly = null, ?array $projectScope = null, ?string $department = null): array
     {
         $like = '%' . addcslashes($query, '%_\\') . '%';
 
@@ -75,7 +75,7 @@ final class UserRepository
                     WHERE u.is_active = 1 AND (u.name LIKE ? OR u.employee_code LIKE ?) AND $condition";
             $params = [$like, $like, $projectId, $projectId];
         } else {
-            $sql = 'SELECT id, name, employee_code, role FROM users WHERE is_active = 1 AND (name LIKE ? OR employee_code LIKE ?)';
+            $sql = 'SELECT id, name, employee_code, role FROM users u WHERE is_active = 1 AND (name LIKE ? OR employee_code LIKE ?)';
             $params = [$like, $like];
         }
 
@@ -85,33 +85,95 @@ final class UserRepository
             $params = array_merge($params, $rolesOnly);
         }
 
+        // Department is a soft filter for the "Reports To" picker: admins are an org-wide role
+        // and stay selectable regardless of department, only managers get narrowed down.
+        if ($department !== null && $department !== '') {
+            $sql .= ' AND (u.department = ? OR u.role = \'admin\')';
+            $params[] = $department;
+        }
+
         $sql .= ' ORDER BY name ASC LIMIT ' . (int)$limit;
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
     }
 
-    /** Full listing for employees.php, with manager name joined and optional text filter. */
-    public function listActiveWithManager(string $query = ''): array
+    /** Shared WHERE/params builder for listActiveWithManager()/countActiveWithManager(). */
+    private function activeScope(string $query, string $department): array
     {
-        $sql = '
-            SELECT e.*, m.name AS manager_name
-            FROM users e
-            LEFT JOIN users m ON m.id = e.manager_id
-            WHERE e.is_active = 1
-        ';
+        $where = ['e.is_active = 1'];
         $params = [];
 
         if ($query !== '') {
             $like = '%' . addcslashes($query, '%_\\') . '%';
-            $sql .= ' AND (e.name LIKE ? OR e.employee_code LIKE ? OR e.email LIKE ? OR e.department LIKE ?)';
-            $params = [$like, $like, $like, $like];
+            $where[] = '(e.name LIKE ? OR e.employee_code LIKE ? OR e.email LIKE ? OR e.department LIKE ?)';
+            array_push($params, $like, $like, $like, $like);
+        }
+        if ($department !== '') {
+            if ($department === 'Unassigned') {
+                $where[] = "(e.department IS NULL OR e.department = '')";
+            } else {
+                $where[] = 'e.department = ?';
+                $params[] = $department;
+            }
+        }
+        return [$where, $params];
+    }
+
+    /** Full listing for employees.php, with manager name joined and optional text/department filter.
+     *  $page/$perPage: pass $perPage <= 0 for the old "no pagination" behavior (small result sets only). */
+    public function listActiveWithManager(string $query = '', string $department = '', int $page = 1, int $perPage = 0): array
+    {
+        $sql = '
+            SELECT e.id, e.name, e.role, e.employee_code, e.email, e.department, e.telephone,
+                   e.manager_id, e.photo_filename, m.name AS manager_name
+            FROM users e
+            LEFT JOIN users m ON m.id = e.manager_id
+        ';
+        [$where, $params] = $this->activeScope($query, $department);
+        $sql .= ' WHERE ' . implode(' AND ', $where);
+        $sql .= ' ORDER BY e.role = "admin" DESC, e.role = "manager" DESC, e.name ASC';
+
+        if ($perPage > 0) {
+            $perPage = min(max($perPage, 1), 200);
+            $page = max($page, 1);
+            $sql .= ' LIMIT ' . $perPage . ' OFFSET ' . (($page - 1) * $perPage);
         }
 
-        $sql .= ' ORDER BY e.role = "admin" DESC, e.role = "manager" DESC, e.name ASC';
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
+    }
+
+    /** Total count matching the same filters as listActiveWithManager() — for pagination. */
+    public function countActiveWithManager(string $query = '', string $department = ''): int
+    {
+        [$where, $params] = $this->activeScope($query, $department);
+        $sql = 'SELECT COUNT(*) c FROM users e WHERE ' . implode(' AND ', $where);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int)$stmt->fetch()['c'];
+    }
+
+    /** Distinct existing department names (non-empty), for populating a "pick one that already
+     *  exists" dropdown instead of a free-text field that lets typos/case-variants multiply. */
+    public function distinctDepartments(): array
+    {
+        $sql = "SELECT DISTINCT department FROM users WHERE is_active = 1 AND department IS NOT NULL AND department <> '' ORDER BY department";
+        return $this->db->query($sql)->fetchAll(\PDO::FETCH_COLUMN);
+    }
+
+    /** Department name + active-employee count, for the department-index view. */
+    public function departmentSummary(): array
+    {
+        $sql = "
+            SELECT COALESCE(NULLIF(department, ''), 'Unassigned') AS department, COUNT(*) AS employee_count
+            FROM users
+            WHERE is_active = 1
+            GROUP BY department
+            ORDER BY department
+        ";
+        return $this->db->query($sql)->fetchAll();
     }
 
     public function listManagers(): array
@@ -277,11 +339,12 @@ final class UserRepository
         $stmt->execute([$managerId, $employeeId]);
     }
 
-    /** Used by the "Edit Employee" modal: name, role, department, telephone, and who they report to. */
-    public function updateProfile(int $id, string $name, string $role, ?string $department, ?int $managerId, ?string $telephone = null): void
+    /** Used by the "Edit Employee" modal: name, role, department, telephone, who they report to,
+     *  and (from the profile page's edit form) job title, stream, and group. */
+    public function updateProfile(int $id, string $name, string $role, ?string $department, ?int $managerId, ?string $telephone = null, ?string $jobTitle = null, ?string $stream = null, ?string $userGroup = null): void
     {
-        $stmt = $this->db->prepare('UPDATE users SET name = ?, role = ?, department = ?, manager_id = ?, telephone = ? WHERE id = ?');
-        $stmt->execute([$name, $role, $department ?: null, $managerId, $telephone ?: null, $id]);
+        $stmt = $this->db->prepare('UPDATE users SET name = ?, role = ?, department = ?, manager_id = ?, telephone = ?, job_title = ?, stream = ?, user_group = ? WHERE id = ?');
+        $stmt->execute([$name, $role, $department ?: null, $managerId, $telephone ?: null, $jobTitle ?: null, $stream ?: null, $userGroup ?: null, $id]);
     }
 
     /** Finds one active employee by exact employee code or name match (for the org chart search), with their manager and direct reports resolved. */
@@ -300,12 +363,12 @@ final class UserRepository
 
         $manager = null;
         if ($employee['manager_id']) {
-            $mstmt = $this->db->prepare('SELECT id, name, employee_code, role, department, manager_id, telephone, photo_filename FROM users WHERE id = ?');
+            $mstmt = $this->db->prepare('SELECT id, name, employee_code, role, department, manager_id, telephone, email, photo_filename FROM users WHERE id = ?');
             $mstmt->execute([$employee['manager_id']]);
             $manager = $mstmt->fetch() ?: null;
         }
 
-        $rstmt = $this->db->prepare('SELECT id, name, employee_code, role, department, manager_id, telephone, photo_filename FROM users WHERE manager_id = ? AND is_active = 1 ORDER BY name');
+        $rstmt = $this->db->prepare('SELECT id, name, employee_code, role, department, manager_id, telephone, email, photo_filename FROM users WHERE manager_id = ? AND is_active = 1 ORDER BY name');
         $rstmt->execute([$employee['id']]);
         $reports = $rstmt->fetchAll();
 

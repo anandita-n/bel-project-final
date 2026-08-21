@@ -41,8 +41,8 @@ function confirmModal(message, onConfirm, opts) {
     const overlay = openModal(opts.title || 'Confirm', '' +
         '<p style="margin:0 0 18px;font-size:13px;color:var(--text);">' + message + '</p>' +
         '<div style="text-align:right;">' +
-        '<button type="button" class="btn btn-secondary" id="confirmModalCancel">Cancel</button> ' +
-        '<button type="button" class="btn btn-danger" id="confirmModalOk">' + (opts.okLabel || 'Confirm') + '</button>' +
+        '<button type="button" class="pill-btn pill-btn-secondary" id="confirmModalCancel">Cancel</button> ' +
+        '<button type="button" class="pill-btn pill-btn-danger" id="confirmModalOk">' + (opts.okLabel || 'Confirm') + '</button>' +
         '</div>');
     overlay.querySelector('#confirmModalCancel').addEventListener('click', closeModal);
     overlay.querySelector('#confirmModalOk').addEventListener('click', function () {

@@ -22,6 +22,7 @@ $canManage = $u['role'] === 'admin' || (int)$u['id'] === (int)$project['manager_
 if (!$canManage) {
     json_error('Not permitted to manage this project.', 403);
 }
+require_project_active($project);
 
 if ($action === 'add') {
     $userId = (int)($body['user_id'] ?? 0);

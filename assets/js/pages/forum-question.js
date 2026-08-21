@@ -47,77 +47,165 @@
     }
     document.querySelectorAll('.forum-delete-link').forEach(bindDeleteLink);
 
-    /* ---------- Accept answer (question author or admin) ---------- */
+    /* ---------- Accept answer (question author) — one toggle button: click to accept,
+       click again to undo, right next to Helpful instead of a separate button below the card. */
 
-    function bindAcceptBtn(btn) {
+    function bindAcceptToggle(btn) {
         btn.addEventListener('click', function () {
-            apiPost('api/forum/accept.php', { question_id: btn.dataset.questionId, answer_id: btn.dataset.answerId })
+            const accepted = btn.dataset.accepted === '1';
+            const body = accepted
+                ? { action: 'unaccept', question_id: btn.dataset.questionId }
+                : { question_id: btn.dataset.questionId, answer_id: btn.dataset.answerId };
+            apiPost('api/forum/accept.php', body)
                 .then(function () { window.location.reload(); })
                 .catch(function (err) { showError(err.message); });
         });
     }
-    document.querySelectorAll('.forum-accept-btn').forEach(bindAcceptBtn);
+    document.querySelectorAll('.forum-accept-toggle').forEach(bindAcceptToggle);
 
-    /* ---------- Comments (on the question, and on each answer) ---------- */
+    /* ---------- Edit question (author only) ---------- */
 
-    function bindCommentDelete(btn) {
+    const editBtn = document.getElementById('forumEditQuestionBtn');
+    if (editBtn) {
+        editBtn.addEventListener('click', function () {
+            const overlay = openModal('Edit Question', '' +
+                '<div id="forumEditError" class="error-msg" style="display:none;"></div>' +
+                '<form id="forumEditForm">' +
+                '<div class="field"><label>Title</label><input type="text" id="forumEditTitle" required></div>' +
+                '<div class="field"><label>Body</label><textarea id="forumEditBody" rows="6" required></textarea></div>' +
+                '<div class="field"><label>Tags</label><input type="text" id="forumEditTags" placeholder="comma, separated, tags"></div>' +
+                '<button type="submit" class="pill-btn">Save Changes</button>' +
+                '</form>');
+            overlay.querySelector('#forumEditTitle').value = cfg.questionTitle;
+            overlay.querySelector('#forumEditBody').value = cfg.questionBody;
+            overlay.querySelector('#forumEditTags').value = cfg.questionTags;
+
+            const modalErrorBox = overlay.querySelector('#forumEditError');
+            function showModalError(message) {
+                modalErrorBox.textContent = message;
+                modalErrorBox.style.display = 'block';
+            }
+
+            overlay.querySelector('#forumEditForm').addEventListener('submit', function (ev) {
+                ev.preventDefault();
+                const title = overlay.querySelector('#forumEditTitle').value.trim();
+                const body = overlay.querySelector('#forumEditBody').value.trim();
+                if (!title || !body) { showModalError('Title and body are required.'); return; }
+                apiPost('api/forum/update.php', {
+                    question_id: cfg.questionId,
+                    title: title,
+                    body: body,
+                    tags: overlay.querySelector('#forumEditTags').value.trim(),
+                }).then(function () {
+                    window.location.reload();
+                }).catch(function (err) { showModalError(err.message); });
+            });
+        });
+    }
+
+    /* ---------- Sort answers ---------- */
+
+    const sortSelect = document.getElementById('forumAnswerSort');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function () {
+            const url = new URL(window.location.href);
+            url.searchParams.set('sort', sortSelect.value);
+            window.location.href = url.toString();
+        });
+    }
+
+    /* ---------- Replies (on each answer) ---------- */
+
+    function bindReplyDelete(btn) {
         btn.addEventListener('click', function () {
-            const commentEl = btn.closest('.forum-comment');
-            const container = btn.closest('.forum-comments');
-            const type = container.dataset.type === 'question' ? 'question_comment' : 'answer_comment';
-            confirmModal('Delete this comment?', function () {
-                apiPost('api/forum/delete.php', { type: type, id: commentEl.dataset.commentId })
-                    .then(function () { commentEl.remove(); })
+            const replyEl = btn.closest('.forum-reply');
+            confirmModal('Delete this reply?', function () {
+                apiPost('api/forum/delete.php', { type: 'answer_comment', id: replyEl.dataset.commentId })
+                    .then(function () { replyEl.remove(); })
                     .catch(function (err) { showError(err.message); });
             }, { okLabel: 'Delete' });
         });
     }
 
-    function commentRowHTML(c, canDelete) {
-        return '<div class="forum-comment" data-comment-id="' + c.id + '">' +
-            '<span class="forum-comment-body">' + escapeHtml(c.body) + '</span>' +
-            ' &mdash; <span class="forum-comment-author">' + escapeHtml(c.author_name) + '</span>' +
-            (canDelete ? ' <button type="button" class="forum-comment-delete" title="Delete comment">&times;</button>' : '') +
+    function formatReplyTime(iso) {
+        const d = new Date(iso.replace(' ', 'T'));
+        const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        return datePart + ' at ' + timePart;
+    }
+
+    function replyRowHTML(c, canDelete) {
+        const initial = escapeHtml(c.author_name.charAt(0).toUpperCase());
+        return '<div class="forum-reply" data-comment-id="' + c.id + '">' +
+            '<span class="forum-reply-avatar">' + initial + '</span>' +
+            '<div class="forum-reply-content">' +
+            '<div class="forum-reply-bubble">' +
+            '<span class="forum-reply-author">' + escapeHtml(c.author_name) + '</span>' +
+            '<span class="forum-reply-body">' + escapeHtml(c.body) + '</span>' +
+            '</div>' +
+            '<span class="forum-reply-time">' + escapeHtml(formatReplyTime(c.created_at)) + '</span>' +
+            '</div>' +
+            (canDelete ? '<button type="button" class="forum-reply-delete" title="Delete reply">&times;</button>' : '') +
             '</div>';
     }
 
-    function bindCommentsBlock(container) {
-        const type = container.dataset.type;
-        const id = container.dataset.id;
-        const list = container.querySelector('.forum-comment-list');
-        const addLink = container.querySelector('.forum-add-comment-link');
-        const form = container.querySelector('.forum-comment-form');
-        const input = container.querySelector('.forum-comment-input');
-        const submitBtn = container.querySelector('.forum-comment-submit');
+    function bindRepliesBlock(container) {
+        const answerId = container.dataset.answerId;
+        const list = container.querySelector('.forum-reply-list');
+        const form = container.querySelector('.forum-reply-form');
+        const input = container.querySelector('.forum-reply-input');
+        const submitBtn = container.querySelector('.forum-reply-submit');
+        const cancelBtn = container.querySelector('.forum-reply-cancel');
 
-        container.querySelectorAll('.forum-comment-delete').forEach(bindCommentDelete);
+        container.querySelectorAll('.forum-reply-delete').forEach(bindReplyDelete);
 
-        addLink.addEventListener('click', function () {
-            addLink.style.display = 'none';
-            form.style.display = '';
-            input.focus();
-        });
+        function closeForm() {
+            form.style.display = 'none';
+            input.value = '';
+        }
 
         function submit() {
             const text = input.value.trim();
             if (!text) return;
-            apiPost('api/forum/comment.php', { type: type, id: id, body: text })
+            apiPost('api/forum/comment.php', { type: 'answer', id: answerId, body: text })
                 .then(function (data) {
                     const row = document.createElement('div');
-                    row.innerHTML = commentRowHTML(data.comment, true);
-                    const commentEl = row.firstElementChild;
-                    list.appendChild(commentEl);
-                    bindCommentDelete(commentEl.querySelector('.forum-comment-delete'));
-                    input.value = '';
-                    form.style.display = 'none';
-                    addLink.style.display = '';
+                    row.innerHTML = replyRowHTML(data.comment, true);
+                    const replyEl = row.firstElementChild;
+                    list.appendChild(replyEl);
+                    bindReplyDelete(replyEl.querySelector('.forum-reply-delete'));
+                    closeForm();
                 })
                 .catch(function (err) { showError(err.message); });
         }
         submitBtn.addEventListener('click', submit);
-        input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') submit(); });
+        cancelBtn.addEventListener('click', closeForm);
+        input.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Enter') submit();
+            if (ev.key === 'Escape') closeForm();
+        });
+
+        // Clicking anywhere outside this answer's reply area closes an open composer
+        // without submitting — same idea as dismissing a popover.
+        document.addEventListener('mousedown', function (ev) {
+            if (form.style.display !== 'none' && !container.contains(ev.target)) {
+                closeForm();
+            }
+        });
+
+        const replyLink = document.querySelector('.forum-reply-link[data-answer-id="' + answerId + '"]');
+        if (replyLink) {
+            replyLink.addEventListener('click', function () {
+                if (form.style.display === 'none') {
+                    form.style.display = 'flex';
+                    input.focus();
+                } else {
+                    closeForm();
+                }
+            });
+        }
     }
-    document.querySelectorAll('.forum-comments').forEach(bindCommentsBlock);
+    document.querySelectorAll('.forum-replies').forEach(bindRepliesBlock);
 
     /* ---------- Answer attachments ---------- */
 

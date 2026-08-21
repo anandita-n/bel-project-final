@@ -19,6 +19,9 @@ function empPickerHTML(name, placeholder) {
 /**
  * opts:
  *   roles: array of role names to restrict results to (e.g. ['admin','manager'])
+ *   department: narrow results to this department (admins are exempt — see UserRepository::search()).
+ *     Mutate opts.department after init to change the scope for subsequent searches (e.g. wiring
+ *     up a department <select>'s change event) — the same opts object is read fresh each search.
  *   selectedId / selectedLabel: pre-fill the field (label can be async-resolved by caller)
  *   onSelect(employee): called with {id, name, code, role} on pick
  */
@@ -45,7 +48,10 @@ function initEmpPicker(root, opts) {
             var row = document.createElement('div');
             row.className = 'emp-picker-item';
             row.innerHTML =
+                '<span class="emp-picker-item-who">' +
+                (typeof avatarHTML === 'function' ? avatarHTML({ id: e.id, name: e.name, role: e.role.toLowerCase() }, 'avatar-sm') : '') +
                 '<span class="emp-picker-item-name">' + empPickerEscape(e.name) + '</span>' +
+                '</span>' +
                 '<span class="emp-picker-item-meta">' + empPickerEscape(e.code) + ' · ' + empPickerEscape(e.role) + '</span>';
             row.addEventListener('mousedown', function (ev) {
                 ev.preventDefault();
@@ -68,6 +74,7 @@ function initEmpPicker(root, opts) {
         var url = baseUrl + '?q=' + encodeURIComponent(q);
         if (opts.roles && opts.roles.length) url += '&roles=' + encodeURIComponent(opts.roles.join(','));
         if (opts.projectId && opts.mode) url += '&project_id=' + encodeURIComponent(opts.projectId) + '&mode=' + encodeURIComponent(opts.mode);
+        if (opts.department) url += '&department=' + encodeURIComponent(opts.department);
         apiGet(url).then(function (data) {
             if (input.value.trim().toLowerCase() !== q.toLowerCase()) return; // stale response
             render(data.results || []);
@@ -126,6 +133,7 @@ function initEmpPickerMulti(root, opts) {
         hidden.value = selected.map(function (e) { return e.id; }).join(',');
         chipsEl.innerHTML = selected.map(function (e, idx) {
             return '<span class="emp-picker-chip" data-idx="' + idx + '">' +
+                (typeof avatarHTML === 'function' ? avatarHTML(e, 'avatar-sm') : '') +
                 '<span class="emp-picker-chip-name">' + empPickerEscape(e.name) + '</span>' +
                 '<button type="button" class="emp-picker-chip-remove" data-idx="' + idx + '" aria-label="Remove">&times;</button>' +
                 '</span>';
@@ -153,7 +161,10 @@ function initEmpPickerMulti(root, opts) {
             var row = document.createElement('div');
             row.className = 'emp-picker-item';
             row.innerHTML =
+                '<span class="emp-picker-item-who">' +
+                (typeof avatarHTML === 'function' ? avatarHTML({ id: e.id, name: e.name, role: e.role.toLowerCase() }, 'avatar-sm') : '') +
                 '<span class="emp-picker-item-name">' + empPickerEscape(e.name) + '</span>' +
+                '</span>' +
                 '<span class="emp-picker-item-meta">' + empPickerEscape(e.code) + ' · ' + empPickerEscape(e.role) + '</span>';
             row.addEventListener('mousedown', function (ev) {
                 ev.preventDefault();
@@ -172,6 +183,7 @@ function initEmpPickerMulti(root, opts) {
         var url = baseUrl + '?q=' + encodeURIComponent(q);
         if (opts.roles && opts.roles.length) url += '&roles=' + encodeURIComponent(opts.roles.join(','));
         if (opts.projectId && opts.mode) url += '&project_id=' + encodeURIComponent(opts.projectId) + '&mode=' + encodeURIComponent(opts.mode);
+        if (opts.department) url += '&department=' + encodeURIComponent(opts.department);
         apiGet(url).then(function (data) {
             if (input.value.trim().toLowerCase() !== q.toLowerCase()) return; // stale response
             render(data.results || []);

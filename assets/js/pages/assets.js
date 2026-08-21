@@ -1,5 +1,6 @@
-/* Asset Management list: live search+filter, and (admin only) Edit/Assign/Change Status
-   modals via api/assets/*.php. Expects window.PAGE_CONFIG = { isAdmin, categories, statuses }. */
+/* Asset Management list: live search+filter (scoped to a department for admin/manager, and
+   paginated there), and (admin only) Edit/Assign/Change Status modals via api/assets/*.php.
+   Expects window.PAGE_CONFIG = { isAdmin, categories, statuses, department, paginated }. */
 
 (function () {
     const cfg = window.PAGE_CONFIG;
@@ -43,24 +44,51 @@
         tbody.querySelectorAll('tr').forEach(bindAssetRow);
     }
 
+    let currentPage = 1;
+
+    function renderPagination(data) {
+        const el = document.getElementById('assetsPagination');
+        if (!el) return;
+        if (data.total_pages <= 1) {
+            el.style.display = 'none';
+            el.innerHTML = '';
+            return;
+        }
+        el.style.display = '';
+        el.innerHTML = '' +
+            '<button type="button" id="assetsPagePrev" class="btn btn-secondary btn-sm"' + (data.page <= 1 ? ' disabled' : '') + '>&larr; Previous</button>' +
+            '<span class="pagination-info">Page ' + data.page + ' of ' + data.total_pages + ' (' + data.total + ' total)</span>' +
+            '<button type="button" id="assetsPageNext" class="btn btn-secondary btn-sm"' + (data.page >= data.total_pages ? ' disabled' : '') + '>Next &rarr;</button>';
+
+        const prevBtn = document.getElementById('assetsPagePrev');
+        const nextBtn = document.getElementById('assetsPageNext');
+        if (prevBtn) prevBtn.addEventListener('click', function () { if (currentPage > 1) { currentPage--; runSearch(); } });
+        if (nextBtn) nextBtn.addEventListener('click', function () { if (currentPage < data.total_pages) { currentPage++; runSearch(); } });
+    }
+
     const searchInput = document.getElementById('assetSearchInput');
     const categoryFilter = document.getElementById('assetCategoryFilter');
     const statusFilter = document.getElementById('assetStatusFilter');
 
-    const runSearch = debounce(function () {
+    function runSearch() {
         const params = new URLSearchParams({
             q: searchInput.value.trim(),
             category: categoryFilter.value,
             status: statusFilter.value,
+            department: cfg.department || '',
+            page: currentPage,
         });
         apiGet('api/assets/list.php?' + params.toString()).then(function (data) {
             renderRows(data.results);
+            if (cfg.paginated) renderPagination(data);
         });
-    }, 200);
+    }
 
-    searchInput.addEventListener('input', runSearch);
-    categoryFilter.addEventListener('change', runSearch);
-    statusFilter.addEventListener('change', runSearch);
+    const debouncedSearch = debounce(function () { currentPage = 1; runSearch(); }, 300);
+
+    searchInput.addEventListener('input', debouncedSearch);
+    categoryFilter.addEventListener('change', function () { currentPage = 1; runSearch(); });
+    statusFilter.addEventListener('change', function () { currentPage = 1; runSearch(); });
 
     function bindAssetRow(row) {
         const kebab = row.querySelector('.asset-row-kebab');

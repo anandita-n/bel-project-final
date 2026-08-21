@@ -33,6 +33,30 @@ final class ForumRepository
         return $questionId;
     }
 
+    /** Only the question's own author may edit it — no admin override, mirroring acceptAnswer(). */
+    public function updateQuestion(int $id, int $requestingUserId, string $title, string $body, array $tagNames): bool
+    {
+        $question = $this->findQuestion($id);
+        if (!$question || (int)$question['user_id'] !== $requestingUserId) {
+            return false;
+        }
+        $stmt = $this->db->prepare('UPDATE forum_questions SET title = ?, body = ? WHERE id = ?');
+        $stmt->execute([$title, $body, $id]);
+
+        $del = $this->db->prepare('DELETE FROM forum_question_tags WHERE question_id = ?');
+        $del->execute([$id]);
+        foreach ($tagNames as $tagName) {
+            $tagName = trim($tagName);
+            if ($tagName === '') {
+                continue;
+            }
+            $tagId = $this->findOrCreateTag($tagName);
+            $link = $this->db->prepare('INSERT IGNORE INTO forum_question_tags (question_id, tag_id) VALUES (?, ?)');
+            $link->execute([$id, $tagId]);
+        }
+        return true;
+    }
+
     private function findOrCreateTag(string $name): int
     {
         $stmt = $this->db->prepare('SELECT id FROM forum_tags WHERE name = ?');
@@ -196,7 +220,9 @@ final class ForumRepository
         return array_column($stmt->fetchAll(), 'department');
     }
 
-    public function answersForQuestion(int $questionId): array
+    /** $sort: 'helpful' (default — most Helpful votes first) | 'oldest' | 'newest'.
+     *  The accepted answer, if any, always stays pinned to the top regardless of $sort. */
+    public function answersForQuestion(int $questionId, string $sort = 'helpful'): array
     {
         $stmt = $this->db->prepare('
             SELECT a.*, u.name AS author_name, u.role AS author_role, u.department AS author_department, u.photo_filename AS author_photo_filename,
@@ -208,11 +234,17 @@ final class ForumRepository
         $stmt->execute([$questionId]);
         $rows = $stmt->fetchAll();
 
-        usort($rows, function ($a, $b) {
+        usort($rows, function ($a, $b) use ($sort) {
             $aAccepted = (int)$a['id'] === (int)$a['accepted_answer_id'];
             $bAccepted = (int)$b['id'] === (int)$b['accepted_answer_id'];
             if ($aAccepted !== $bAccepted) {
                 return $aAccepted ? -1 : 1;
+            }
+            if ($sort === 'oldest') {
+                return strtotime($a['created_at']) <=> strtotime($b['created_at']);
+            }
+            if ($sort === 'newest') {
+                return strtotime($b['created_at']) <=> strtotime($a['created_at']);
             }
             return $b['helpful_count'] <=> $a['helpful_count'];
         });
@@ -276,6 +308,20 @@ final class ForumRepository
         }
         $stmt = $this->db->prepare('UPDATE forum_questions SET accepted_answer_id = ? WHERE id = ?');
         $stmt->execute([$answerId, $questionId]);
+        $this->touchQuestion($questionId);
+        return true;
+    }
+
+    /** Reverts a question back to "open" (e.g. the author accepted an answer by mistake) —
+     *  only the question's own author may do this, same restriction as acceptAnswer(). */
+    public function unacceptAnswer(int $questionId, int $requestingUserId): bool
+    {
+        $question = $this->findQuestion($questionId);
+        if (!$question || (int)$question['user_id'] !== $requestingUserId) {
+            return false;
+        }
+        $stmt = $this->db->prepare('UPDATE forum_questions SET accepted_answer_id = NULL WHERE id = ?');
+        $stmt->execute([$questionId]);
         $this->touchQuestion($questionId);
         return true;
     }

@@ -12,11 +12,12 @@ require 'includes/layout_top.php';
 <script src="assets/js/api.js"></script>
 <script src="assets/js/utils.js?v=<?= filemtime(__DIR__ . '/assets/js/utils.js') ?>"></script>
 <?php if ($is_admin): ?>
-<script src="assets/js/emp-picker.js"></script>
+<script src="assets/js/emp-picker.js?v=<?= filemtime(__DIR__ . '/assets/js/emp-picker.js') ?>"></script>
 <script src="assets/js/modal.js?v=<?= filemtime(__DIR__ . '/assets/js/modal.js') ?>"></script>
 <?php endif; ?>
 
-<div class="standalone-panel-head">
+<div class="org-page">
+<div class="standalone-panel-head org-panel-head">
     <h3>Organisation Structure</h3>
     <div class="panel-head-tools">
         <div class="search-bar">
@@ -26,14 +27,15 @@ require 'includes/layout_top.php';
     </div>
 </div>
 <div id="orgSearchResult" class="org-search-result" style="display:none;"></div>
-<div id="orgEmployeeInfo" class="panel org-employee-info" style="display:none;"></div>
+<div id="orgEmployeeInfo" class="org-info-block" style="display:none;"></div>
+</div>
 <div id="orgChartPrompt" class="empty-state">Search by name or employee ID above to view that employee's manager and direct reports.</div>
 <div class="org-chart" id="orgChartWrap" style="display:none;">
     <div class="org-roots"></div>
 </div>
 
 <script>
-window.PAGE_CONFIG = { isAdmin: <?= $is_admin ? 'true' : 'false' ?> };
+window.PAGE_CONFIG = { isAdmin: <?= $is_admin ? 'true' : 'false' ?>, isEmployee: <?= $u['role'] === 'employee' ? 'true' : 'false' ?> };
 </script>
 <script src="assets/js/pages/organisation.js?v=<?= filemtime(__DIR__ . '/assets/js/pages/organisation.js') ?>"></script>
 

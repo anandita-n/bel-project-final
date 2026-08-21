@@ -53,6 +53,20 @@ final class MemberReviewRepository
         return $stmt->fetchAll();
     }
 
+    /** Newest first, every author included — lets a member see all comments left about them on this project. */
+    public function forProjectMember(int $projectId, int $userId): array
+    {
+        $stmt = $this->db->prepare('
+            SELECT r.id, r.comment, r.created_at, a.name AS author_name
+            FROM member_reviews r
+            JOIN users a ON a.id = r.author_id
+            WHERE r.project_id = ? AND r.user_id = ?
+            ORDER BY r.created_at DESC
+        ');
+        $stmt->execute([$projectId, $userId]);
+        return $stmt->fetchAll();
+    }
+
     /** Newest first — every comment left on this project (any member, any author), for the Overview tab's "Recent Comments" widget. */
     public function forProject(int $projectId, int $limit = 10): array
     {
@@ -80,5 +94,19 @@ final class MemberReviewRepository
     {
         $stmt = $this->db->prepare('UPDATE member_reviews SET is_read = 1 WHERE user_id = ? AND is_read = 0');
         $stmt->execute([$userId]);
+    }
+
+    /** Scoped to $userId so one recipient can't mark another's notification read. */
+    public function markOneRead(int $id, int $userId): void
+    {
+        $stmt = $this->db->prepare('UPDATE member_reviews SET is_read = 1 WHERE id = ? AND user_id = ?');
+        $stmt->execute([$id, $userId]);
+    }
+
+    /** Scoped to $userId so one recipient can't delete another's notification. */
+    public function deleteOne(int $id, int $userId): void
+    {
+        $stmt = $this->db->prepare('DELETE FROM member_reviews WHERE id = ? AND user_id = ?');
+        $stmt->execute([$id, $userId]);
     }
 }

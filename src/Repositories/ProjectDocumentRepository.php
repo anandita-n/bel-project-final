@@ -37,6 +37,21 @@ final class ProjectDocumentRepository
         return $stmt->fetchAll();
     }
 
+    /** Documents this employee has personally uploaded, across every project — powers the
+     *  "Documents" tab on their profile page. */
+    public function forUploader(int $userId): array
+    {
+        $stmt = $this->db->prepare('
+            SELECT d.*, p.name AS project_name, p.project_code
+            FROM project_documents d
+            JOIN projects p ON p.id = d.project_id
+            WHERE d.user_id = ?
+            ORDER BY d.created_at DESC
+        ');
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll();
+    }
+
     public function find(int $id): ?array
     {
         $stmt = $this->db->prepare('SELECT * FROM project_documents WHERE id = ?');

@@ -19,7 +19,7 @@ $project = $projectId ? $projects->findById($projectId) : null;
 if (!$project) {
     json_error('Project not found.', 404);
 }
-if (!$projects->userHasAccess($projectId, $u)) {
+if (!$projects->hasFullAccess($project, $u)) {
     json_error('Not permitted.', 403);
 }
 
@@ -38,8 +38,12 @@ function render_comment(array $c): array {
 
 if ($action === 'list_for_task') {
     $taskId = (int)($body['task_id'] ?? 0);
+    if (!$tasks->find($taskId, $projectId)) {
+        json_error('Task not found.', 404);
+    }
     json_out(['ok' => true, 'comments' => array_map('render_comment', $comments->forTask($taskId))]);
 } elseif ($action === 'create') {
+    require_project_active($project);
     $taskId = (int)($body['task_id'] ?? 0);
     $task = $tasks->find($taskId, $projectId);
     if (!$task) {

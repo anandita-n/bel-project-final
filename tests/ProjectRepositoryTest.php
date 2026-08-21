@@ -5,9 +5,14 @@ use App\Repositories\ProjectRepository;
 test_suite('ProjectRepository (methods added this session)', function () {
     $repo = new ProjectRepository();
 
-    test('nextSuggestedCode returns a BEL-PRJ-### code', function () use ($repo) {
+    test('nextSuggestedCode returns a PRJ### code, one past the highest existing one', function () use ($repo) {
         $code = $repo->nextSuggestedCode();
-        assert_true((bool)preg_match('/^BEL-PRJ-\d{3}$/', $code), "Got: $code");
+        assert_true((bool)preg_match('/^PRJ\d{3,}$/', $code), "Got: $code");
+
+        $mgr = make_user('Suggested Code Manager', 'BEL-SUG01', 'manager');
+        $projectId = make_project('PRJ997', 'Suggested Code Project', $mgr);
+        assert_equals('PRJ998', $repo->nextSuggestedCode());
+        $repo->delete($projectId);
     });
 
     test('findById includes the manager\'s telephone', function () use ($repo) {
@@ -71,6 +76,87 @@ test_suite('ProjectRepository (methods added this session)', function () {
         $mgr = make_user('Code Manager', 'BEL-COD01', 'manager');
         make_project('BEL-PRJ-UNIQX', 'Unique Code Project', $mgr);
         assert_true($repo->codeExists('BEL-PRJ-UNIQX'));
+    });
+
+    test('archive sets archived_at/archived_by/archive_reason without touching other data', function () use ($repo) {
+        $mgr = make_user('Archive Manager', 'BEL-ARC01', 'manager');
+        $admin = make_user('Archive Admin', 'BEL-ARC02', 'admin');
+        $emp = make_user('Archive Member', 'BEL-ARC03');
+        $projectId = make_project('BEL-PRJ-ARC1', 'Archive Test Project', $mgr);
+        $repo->addMember($projectId, $emp, 'Developer');
+        $taskId = (new \App\Repositories\TaskRepository())->create([
+            'project_id' => $projectId, 'title' => 'Should survive archiving', 'description' => '',
+            'priority' => 'medium', 'created_by' => $mgr,
+        ]);
+
+        $repo->archive($projectId, $admin, 'No longer needed');
+
+        $project = $repo->findById($projectId);
+        assert_true($project['archived_at'] !== null, 'archived_at should be set');
+        assert_equals($admin, (int)$project['archived_by']);
+        assert_equals('No longer needed', $project['archive_reason']);
+        // Status/name/members/tasks are untouched by archiving.
+        assert_equals('active', $project['status']);
+        assert_equals(1, count($repo->members($projectId)));
+        $db = \App\Database::connection();
+        $stmt = $db->prepare('SELECT COUNT(*) c FROM tasks WHERE id = ?');
+        $stmt->execute([$taskId]);
+        assert_equals(1, (int)$stmt->fetch()['c']);
+    });
+
+    test('restore clears archived_at/archived_by/archive_reason', function () use ($repo) {
+        $mgr = make_user('Restore Manager', 'BEL-RST01', 'manager');
+        $admin = make_user('Restore Admin', 'BEL-RST02', 'admin');
+        $projectId = make_project('BEL-PRJ-RST1', 'Restore Test Project', $mgr);
+
+        $repo->archive($projectId, $admin, 'temporary');
+        $repo->restore($projectId);
+
+        $project = $repo->findById($projectId);
+        assert_null($project['archived_at']);
+        assert_null($project['archived_by']);
+        assert_null($project['archive_reason']);
+    });
+
+    test('archived projects are excluded from listForUser by default and included with $archived=true', function () use ($repo) {
+        $admin = make_user('List Admin', 'BEL-LST01', 'admin');
+        $mgr = make_user('List Manager', 'BEL-LST02', 'manager');
+        $active = make_project('BEL-PRJ-LST1', 'Active Listing Project', $mgr);
+        $archivedId = make_project('BEL-PRJ-LST2', 'Archived Listing Project', $mgr);
+        $repo->archive($archivedId, $admin, null);
+
+        $activeIds = array_column($repo->listForUser(['id' => $admin, 'role' => 'admin'], '', '', ''), 'id');
+        assert_true(in_array($active, $activeIds, true), 'active project should appear in default listing');
+        assert_true(!in_array($archivedId, $activeIds, true), 'archived project should NOT appear in default listing');
+
+        $archivedIds = array_column($repo->listForUser(['id' => $admin, 'role' => 'admin'], '', '', '', 1, 0, true), 'id');
+        assert_true(in_array($archivedId, $archivedIds, true), 'archived project should appear in archived listing');
+        assert_true(!in_array($active, $archivedIds, true), 'active project should NOT appear in archived listing');
+    });
+
+    test('activityCounts reflects tasks/defects/documents/members', function () use ($repo) {
+        $mgr = make_user('Activity Manager', 'BEL-ACT01', 'manager');
+        $emp = make_user('Activity Member', 'BEL-ACT02');
+        $emptyProjectId = make_project('BEL-PRJ-ACT1', 'Empty Project', $mgr);
+        $busyProjectId = make_project('BEL-PRJ-ACT2', 'Busy Project', $mgr);
+        $repo->addMember($busyProjectId, $emp, 'Developer');
+        (new \App\Repositories\TaskRepository())->create([
+            'project_id' => $busyProjectId, 'title' => 'A task', 'description' => '',
+            'priority' => 'medium', 'created_by' => $mgr,
+        ]);
+
+        assert_equals(0, array_sum($repo->activityCounts($emptyProjectId)));
+        assert_true(array_sum($repo->activityCounts($busyProjectId)) > 0, 'busy project should have nonzero activity');
+    });
+
+    test('managedBy excludes archived projects', function () use ($repo) {
+        $admin = make_user('ManagedBy Admin', 'BEL-MGB01', 'admin');
+        $mgr = make_user('ManagedBy Manager', 'BEL-MGB02', 'manager');
+        $projectId = make_project('BEL-PRJ-MGB1', 'ManagedBy Project', $mgr);
+
+        assert_equals(1, count($repo->managedBy($mgr)));
+        $repo->archive($projectId, $admin, null);
+        assert_equals(0, count($repo->managedBy($mgr)));
     });
 
     test('delete removes the project and cascades to its members and tasks', function () use ($repo) {

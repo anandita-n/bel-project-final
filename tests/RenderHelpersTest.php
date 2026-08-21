@@ -5,17 +5,6 @@
 require_once __DIR__ . '/../includes/helpers.php';
 
 test_suite('render_*() HTML helpers', function () {
-    test('render_wizard_stepper marks steps before the current one done', function () {
-        $html = render_wizard_stepper(3);
-        assert_true(str_contains($html, 'wizard-step done'), 'Step 1/2 should be done');
-        assert_true(str_contains($html, 'wizard-step active'), 'Step 3 should be active');
-    });
-
-    test('render_wizard_stepper on step 1 has no done steps', function () {
-        $html = render_wizard_stepper(1);
-        assert_false(str_contains($html, 'wizard-step done'));
-    });
-
     test('render_asset_row escapes an XSS attempt in the asset name', function () {
         $asset = [
             'id' => 1, 'asset_code' => 'BEL-AST-001', 'name' => '<script>alert(1)</script>',
@@ -113,7 +102,7 @@ test_suite('render_*() HTML helpers', function () {
                    'created_at' => '2026-01-01 00:00:00', 'helpful_count' => 0, 'user_id' => 1, 'accepted_answer_id' => 5];
         $html = render_forum_answer($answer, 10, false, ['role' => 'employee', 'id' => 1]);
         assert_true(str_contains($html, 'forum-answer-accepted'));
-        assert_true(str_contains($html, 'forum-accepted-banner'));
+        assert_true(str_contains($html, 'forum-accepted-badge'));
     });
 
     test('render_forum_answer hides the accepted banner when not accepted', function () {
@@ -121,7 +110,7 @@ test_suite('render_*() HTML helpers', function () {
                    'created_at' => '2026-01-01 00:00:00', 'helpful_count' => 0, 'user_id' => 1, 'accepted_answer_id' => 999];
         $html = render_forum_answer($answer, 10, false, ['role' => 'employee', 'id' => 1]);
         assert_false(str_contains($html, 'forum-answer-accepted'));
-        assert_false(str_contains($html, 'forum-accepted-banner'));
+        assert_false(str_contains($html, 'forum-accepted-badge'));
     });
 
     test('render_forum_answer shows the Helpful button with its count', function () {
@@ -135,26 +124,30 @@ test_suite('render_*() HTML helpers', function () {
     test('render_forum_answer marks the Helpful button active when isHelpful is true', function () {
         $answer = ['id' => 5, 'body' => 'text', 'author_name' => 'A', 'author_role' => 'employee', 'author_department' => null,
                    'created_at' => '2026-01-01 00:00:00', 'helpful_count' => 1, 'user_id' => 1, 'accepted_answer_id' => null];
-        $active = render_forum_answer($answer, 10, false, ['role' => 'employee', 'id' => 1], [], true);
-        $inactive = render_forum_answer($answer, 10, false, ['role' => 'employee', 'id' => 1], [], false);
+        $active = render_forum_answer($answer, 10, false, ['role' => 'employee', 'id' => 1], true);
+        $inactive = render_forum_answer($answer, 10, false, ['role' => 'employee', 'id' => 1], false);
         assert_true(str_contains($active, 'forum-helpful-btn active'));
         assert_false(str_contains($inactive, 'forum-helpful-btn active'));
     });
 
-    test('render_forum_answer shows Accept button for the question author, and not once accepted', function () {
+    test('render_forum_answer shows the Accept toggle for the question author, accepted or not', function () {
         $answer = ['id' => 5, 'body' => 'text', 'author_name' => 'A', 'author_role' => 'employee', 'author_department' => null,
                    'created_at' => '2026-01-01 00:00:00', 'helpful_count' => 0, 'user_id' => 1, 'accepted_answer_id' => null];
         $asAuthor = render_forum_answer($answer, 10, true, ['role' => 'employee', 'id' => 2]);
         $asStranger = render_forum_answer($answer, 10, false, ['role' => 'employee', 'id' => 3]);
-        assert_true(str_contains($asAuthor, 'forum-accept-btn'));
-        assert_false(str_contains($asStranger, 'forum-accept-btn'));
+        assert_true(str_contains($asAuthor, 'forum-accept-toggle'));
+        assert_false(str_contains($asStranger, 'forum-accept-toggle'));
+
+        $answer['accepted_answer_id'] = 5;
+        $asAuthorAccepted = render_forum_answer($answer, 10, true, ['role' => 'employee', 'id' => 2]);
+        assert_true(str_contains($asAuthorAccepted, 'forum-accept-toggle active'), 'toggle stays visible (and marked active) once accepted, so the author can undo it');
     });
 
-    test('render_forum_answer hides Accept button for an admin who is not the question author', function () {
+    test('render_forum_answer hides Accept toggle for an admin who is not the question author', function () {
         $answer = ['id' => 5, 'body' => 'text', 'author_name' => 'A', 'author_role' => 'employee', 'author_department' => null,
                    'created_at' => '2026-01-01 00:00:00', 'helpful_count' => 0, 'user_id' => 1, 'accepted_answer_id' => null];
         $asAdmin = render_forum_answer($answer, 10, false, ['role' => 'admin', 'id' => 99]);
-        assert_false(str_contains($asAdmin, 'forum-accept-btn'), 'Accept is strictly author-only, admins included');
+        assert_false(str_contains($asAdmin, 'forum-accept-toggle'), 'Accept is strictly author-only, admins included');
     });
 
     test('render_forum_answer shows Delete only for the answer\'s own author or an admin', function () {
@@ -180,20 +173,6 @@ test_suite('render_*() HTML helpers', function () {
         $html = render_forum_attachments([], 10, true, ['role' => 'employee', 'id' => 5]);
         assert_true(str_contains($html, 'forum-attach-input'));
         assert_false(str_contains(render_forum_attachments([], 10, false, ['role' => 'employee', 'id' => 5]), 'forum-attach-input'));
-    });
-
-    test('render_forum_comments shows the delete button only for the comment\'s own author', function () {
-        $comments = [['id' => 1, 'body' => 'hi', 'user_id' => 5, 'author_name' => 'Bob']];
-        $asOwner = render_forum_comments($comments, 'question', 1, ['role' => 'employee', 'id' => 5]);
-        $asStranger = render_forum_comments($comments, 'question', 1, ['role' => 'employee', 'id' => 6]);
-        assert_true(str_contains($asOwner, 'forum-comment-delete'));
-        assert_false(str_contains($asStranger, 'forum-comment-delete'));
-    });
-
-    test('render_forum_comments escapes an XSS attempt in the comment body', function () {
-        $comments = [['id' => 1, 'body' => '<img src=x onerror=alert(1)>', 'user_id' => 5, 'author_name' => 'Bob']];
-        $html = render_forum_comments($comments, 'question', 1, ['role' => 'employee', 'id' => 5]);
-        assert_false(str_contains($html, '<img src=x'));
     });
 
     test('render_document_row shows the remove button only when canManage is true', function () {

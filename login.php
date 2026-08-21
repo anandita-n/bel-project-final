@@ -4,7 +4,7 @@ require_once 'includes/bootstrap.php';
 use App\Repositories\UserRepository;
 
 if (current_user()) {
-    header('Location: projects.php');
+    header('Location: ' . (current_user()['role'] === 'admin' ? 'employees.php' : 'projects.php'));
     exit;
 }
 
@@ -33,10 +33,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'name' => $user['name'],
                     'email' => $user['email'],
                     'role' => $user['role'],
+                    'department' => $user['department'],
                     'has_photo' => !empty($user['photo_filename']),
                     'must_change_password' => !empty($user['must_change_password']),
                 ];
-                header('Location: projects.php');
+                header('Location: ' . ($user['role'] === 'admin' ? 'employees.php' : 'projects.php'));
                 exit;
             }
         } else {

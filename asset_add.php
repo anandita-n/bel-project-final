@@ -38,29 +38,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$suggested_code = $_POST['asset_code'] ?? $assets->nextSuggestedCode();
+$suggested_code = $_POST['asset_code'] ?? '';
 
 require 'includes/layout_top.php';
 ?>
 
+<div class="pa-page-wrap">
 <div class="breadcrumb"><a href="assets.php">Asset Management</a> / Add Asset</div>
 
-<div class="panel" style="max-width:760px;">
-    <div class="panel-head"><h3>Asset Details</h3></div>
-    <div class="panel-body">
-        <?php if ($error): ?><div class="error-msg"><?= htmlspecialchars($error) ?></div><?php endif; ?>
-        <form method="POST" action="asset_add.php">
-            <div class="form-grid">
+<div class="pa-header">
+    <h2>Add New Asset</h2>
+</div>
+
+<?php if ($error): ?><div class="error-msg"><?= htmlspecialchars($error) ?></div><?php endif; ?>
+
+<form method="POST" action="asset_add.php" class="pa-form-spacious">
+<div class="pa-page">
+
+        <div class="pa-section pa-section-plain">
+            <div class="pa-section-head">
+                <svg class="pa-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.29 7 12 12l8.71-5"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
+                <div>
+                    <h3>Asset Information</h3>
+                </div>
+            </div>
+            <div class="pa-section-body form-grid">
                 <div class="field">
-                    <label>Asset ID</label>
-                    <input type="text" name="asset_code" required value="<?= htmlspecialchars($suggested_code) ?>">
+                    <label>ID <span class="required-mark">*</span></label>
+                    <input type="text" name="asset_code" placeholder="e.g. BEL-AST-001" required value="<?= htmlspecialchars($suggested_code) ?>">
                 </div>
                 <div class="field">
-                    <label>Asset Name</label>
+                    <label>Asset Name <span class="required-mark">*</span></label>
                     <input type="text" name="name" required value="<?= htmlspecialchars($_POST['name'] ?? '') ?>">
                 </div>
                 <div class="field">
-                    <label>Category</label>
+                    <label>Category <span class="required-mark">*</span></label>
                     <select name="category">
                         <?php foreach (AssetRepository::CATEGORIES as $key => $label): ?>
                         <option value="<?= $key ?>" <?= ($_POST['category'] ?? '') === $key ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
@@ -73,8 +85,19 @@ require 'includes/layout_top.php';
                 </div>
                 <div class="field">
                     <label>Department</label>
-                    <input type="text" name="department" value="<?= htmlspecialchars($_POST['department'] ?? '') ?>">
+                    <input type="text" name="department" placeholder="e.g. Engineering" value="<?= htmlspecialchars($_POST['department'] ?? '') ?>">
                 </div>
+            </div>
+        </div>
+
+        <div class="pa-section pa-section-plain">
+            <div class="pa-section-head">
+                <svg class="pa-section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <div>
+                    <h3>Asset Dates</h3>
+                </div>
+            </div>
+            <div class="pa-section-body form-grid">
                 <div class="field">
                     <label>Purchase Date</label>
                     <input type="date" name="purchase_date" value="<?= htmlspecialchars($_POST['purchase_date'] ?? '') ?>">
@@ -84,10 +107,14 @@ require 'includes/layout_top.php';
                     <input type="date" name="warranty_expiry" value="<?= htmlspecialchars($_POST['warranty_expiry'] ?? '') ?>">
                 </div>
             </div>
-            <button type="submit" class="btn">Add Asset</button>
-            <a href="assets.php" class="btn btn-secondary">Cancel</a>
-        </form>
-    </div>
+        </div>
+
+        <div class="pa-actions">
+            <a href="assets.php" class="pill-btn pill-btn-lg pill-btn-secondary">Cancel</a>
+            <button type="submit" class="pill-btn pill-btn-lg">Add Asset</button>
+        </div>
+</div>
+</form>
 </div>
 
 <?php require 'includes/layout_bottom.php'; ?>

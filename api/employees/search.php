@@ -9,6 +9,7 @@ require_login_json();
 $q = trim($_GET['q'] ?? '');
 $rolesParam = $_GET['roles'] ?? '';
 $rolesOnly = $rolesParam !== '' ? array_filter(explode(',', $rolesParam)) : null;
+$department = trim($_GET['department'] ?? '');
 
 $projectScope = null;
 if (!empty($_GET['project_id']) && in_array($_GET['mode'] ?? '', ['members', 'available'], true)) {
@@ -20,7 +21,7 @@ if ($q === '') {
 }
 
 $repo = new UserRepository();
-$rows = $repo->search($q, 8, $rolesOnly ?: null, $projectScope);
+$rows = $repo->search($q, 8, $rolesOnly ?: null, $projectScope, $department !== '' ? $department : null);
 
 $results = array_map(fn($r) => [
     'id' => (int)$r['id'],

@@ -6,6 +6,14 @@ use App\Repositories\ForumRepository;
 
 const FORUM_MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB
 const FORUM_ALLOWED_EXTENSIONS = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'txt', 'csv', 'zip'];
+const FORUM_ALLOWED_MIME_TYPES = [
+    'application/pdf', 'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain', 'text/csv', 'image/png', 'image/jpeg', 'image/gif',
+    'application/zip', 'application/x-zip-compressed',
+];
 
 $u = require_login_json();
 $repo = new ForumRepository();
@@ -67,7 +75,10 @@ if ($action === 'list_for_answer') {
         json_error('File is too large (10MB max).');
     }
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    if (!in_array($ext, FORUM_ALLOWED_EXTENSIONS, true)) {
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    if (!in_array($ext, FORUM_ALLOWED_EXTENSIONS, true) || !in_array($mime, FORUM_ALLOWED_MIME_TYPES, true)) {
         json_error('File type not allowed.');
     }
 
@@ -80,7 +91,7 @@ if ($action === 'list_for_answer') {
         json_error('Could not save the file.', 500);
     }
 
-    $attachmentId = $repo->createAnswerAttachment($answerId, (int)$u['id'], $file['name'], $storedFilename, (int)$file['size'], $file['type'] ?: null);
+    $attachmentId = $repo->createAnswerAttachment($answerId, (int)$u['id'], $file['name'], $storedFilename, (int)$file['size'], $mime ?: null);
     $created = $repo->findAnswerAttachment($attachmentId);
     $created['uploader_name'] = $u['name'];
     json_out(['ok' => true, 'attachment' => render_forum_attachment($created)]);

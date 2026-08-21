@@ -30,7 +30,8 @@ if ($action === 'download') {
         http_response_code(404);
         exit('Document not found.');
     }
-    if (!$projects->userHasAccess((int)$document['project_id'], $u)) {
+    $documentProject = $projects->findById((int)$document['project_id']);
+    if (!$documentProject || !$projects->hasFullAccess($documentProject, $u)) {
         http_response_code(403);
         exit('Not permitted.');
     }
@@ -54,7 +55,7 @@ $project = $projectId ? $projects->findById($projectId) : null;
 if (!$project) {
     json_error('Project not found.', 404);
 }
-if (!$projects->userHasAccess($projectId, $u)) {
+if (!$projects->hasFullAccess($project, $u)) {
     json_error('Not permitted.', 403);
 }
 $canManage = $u['role'] === 'admin' || (int)$u['id'] === (int)$project['manager_id'];
@@ -65,6 +66,7 @@ if ($action === 'list') {
     if (!$canManage) {
         json_error('Not permitted to upload documents for this project.', 403);
     }
+    require_project_active($project);
     if (empty($_FILES['file'])) {
         json_error('No file uploaded or upload failed.');
     }
@@ -106,6 +108,7 @@ if ($action === 'list') {
     if (!$canManage) {
         json_error('Not permitted to remove documents for this project.', 403);
     }
+    require_project_active($project);
     $id = (int)($body['id'] ?? 0);
     $document = $documents->find($id);
     if (!$document || (int)$document['project_id'] !== $projectId) {

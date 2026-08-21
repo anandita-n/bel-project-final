@@ -50,24 +50,37 @@
         box.style.display = 'block';
     }
 
+    /* ---------- Edit (popup modal, same pattern as "Edit Project Details") ---------- */
+
+    const isAdminProfile = head.dataset.role === 'admin';
+
     function openEditModal() {
-        const id = head.dataset.id;
-        const overlay = openModal('Edit ' + head.dataset.name, '' +
-            '<div id="editEmpError" class="error-msg" style="display:none;"></div>' +
-            '<form id="editEmpForm">' +
-            '<div class="field"><label>Full Name</label><input type="text" id="editEmpName" value="' + escapeHtml(head.dataset.name) + '" required></div>' +
-            '<div class="field"><label>Telephone</label><input type="text" id="editEmpPhone" value="' + escapeHtml(head.dataset.telephone || '') + '"></div>' +
-            '<div class="field"><label>Role</label><select id="editEmpRole">' +
+        const overlay = openModal('Edit Employee Details', '' +
+            '<div id="empEditError" class="error-msg" style="display:none;"></div>' +
+            '<form id="empEditForm">' +
+            '<div class="field"><label>Full Name</label><input type="text" id="editNameInput" required></div>' +
+            '<div class="field"><label>Telephone</label><input type="text" id="editPhoneInput"></div>' +
+            '<div class="field"><label>Role</label><select id="editRoleInput">' +
             '<option value="employee">Employee</option><option value="manager">Manager</option><option value="admin">Admin</option>' +
             '</select></div>' +
-            '<div class="field"><label>Department</label><input type="text" id="editEmpDept" value="' + escapeHtml(head.dataset.department || '') + '"></div>' +
-            '<div class="field"><label>Reports To (Manager)</label><div id="editEmpManagerPicker"></div></div>' +
-            '<button type="submit" class="btn">Save Changes</button>' +
+            '<div class="field"><label>Department</label><input type="text" id="editDeptInput"></div>' +
+            (isAdminProfile ? '' :
+                '<div class="field"><label>Stream</label><input type="text" id="editStreamInput"></div>' +
+                '<div class="field"><label>Group</label><input type="text" id="editGroupInput"></div>') +
+            '<div class="field"><label>Reports To (Manager)</label><div id="editManagerPicker"></div></div>' +
+            '<button type="submit" class="btn">Save</button>' +
             '</form>');
 
-        overlay.querySelector('#editEmpRole').value = head.dataset.role;
+        overlay.querySelector('#editNameInput').value = head.dataset.name;
+        overlay.querySelector('#editPhoneInput').value = head.dataset.telephone || '';
+        overlay.querySelector('#editRoleInput').value = head.dataset.role;
+        overlay.querySelector('#editDeptInput').value = head.dataset.department || '';
+        const streamInput = overlay.querySelector('#editStreamInput');
+        if (streamInput) streamInput.value = head.dataset.stream || '';
+        const groupInput = overlay.querySelector('#editGroupInput');
+        if (groupInput) groupInput.value = head.dataset.group || '';
 
-        const pickerRoot = overlay.querySelector('#editEmpManagerPicker');
+        const pickerRoot = overlay.querySelector('#editManagerPicker');
         pickerRoot.innerHTML = empPickerHTML('manager_id', 'Search name or employee ID…');
         initEmpPicker(pickerRoot, {
             roles: ['admin', 'manager'],
@@ -75,18 +88,26 @@
             selectedLabel: head.dataset.managerName || '',
         });
 
-        overlay.querySelector('#editEmpForm').addEventListener('submit', function (ev) {
+        overlay.querySelector('#empEditForm').addEventListener('submit', function (ev) {
             ev.preventDefault();
-            const errorBox = overlay.querySelector('#editEmpError');
+            const errorBox = overlay.querySelector('#empEditError');
+            const name = overlay.querySelector('#editNameInput').value.trim();
+            if (!name) { showError(errorBox, 'Full name is required.'); return; }
 
-            apiPost('api/employees/update.php', {
-                id: id,
-                name: overlay.querySelector('#editEmpName').value.trim(),
-                telephone: overlay.querySelector('#editEmpPhone').value.trim(),
-                role: overlay.querySelector('#editEmpRole').value,
-                department: overlay.querySelector('#editEmpDept').value.trim(),
+            const streamField = overlay.querySelector('#editStreamInput');
+            const groupField = overlay.querySelector('#editGroupInput');
+            const payload = {
+                id: head.dataset.id,
+                name: name,
+                telephone: overlay.querySelector('#editPhoneInput').value.trim(),
+                role: overlay.querySelector('#editRoleInput').value,
+                department: overlay.querySelector('#editDeptInput').value.trim(),
                 manager_id: pickerRoot.querySelector('.emp-picker-hidden').value,
-            }).then(function () {
+            };
+            if (streamField) payload.stream = streamField.value.trim();
+            if (groupField) payload.user_group = groupField.value.trim();
+
+            apiPost('api/employees/update.php', payload).then(function () {
                 location.reload();
             }).catch(function (err) { showError(errorBox, err.message); });
         });
@@ -177,7 +198,7 @@
 
     const items = [
         { label: 'Edit', onClick: openEditModal },
-        { label: 'Reset Password', onClick: openResetPasswordModal },
+        { label: 'Change Password', onClick: openResetPasswordModal },
         { label: 'Delete', danger: true, onClick: openDeleteModal },
     ];
     initOverflowMenu(kebab, items);

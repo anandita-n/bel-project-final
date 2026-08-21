@@ -26,6 +26,12 @@
     --shadow-lg: 0 8px 24px rgba(11,61,99,.16);
     --radius-sm: 4px;
     --radius-md: 8px;
+    /* Button colors — deliberately their own variables (not --navy) so the site's nav/badge
+       branding can stay put while just the buttons take on a distinct blue and a lighter grey. */
+    --btn-blue: #2f7dc4;
+    --btn-blue-dark: #215f9c;
+    --btn-grey: #6b7785;
+    --btn-grey-dark: #56616d;
 }
 
 * { box-sizing: border-box; }
@@ -107,9 +113,13 @@ a:hover, a:focus { color: var(--navy); text-decoration: underline; }
 
 .field { margin-bottom: 18px; }
 .field label { display: block; font-size: 12.5px; margin-bottom: 6px; color: var(--text); font-weight: 600; }
+.req-star { color: var(--danger); }
 .field-hint { font-size: 12px; color: var(--text-muted); margin: 6px 0 0; }
+.field-error-hint { font-size: 12px; color: var(--danger); margin: 6px 0 0; }
+.field input.field-invalid { border-color: var(--danger); }
+.tel-input-group input { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
 .selected-files-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
-.selected-file-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 10px; background: var(--navy-soft, #f4f6fa); border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 13px; }
+.selected-file-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 10px; background: #f4f6fa; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 13px; }
 .selected-file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .selected-file-remove { flex-shrink: 0; background: none; border: none; cursor: pointer; font-size: 16px; line-height: 1; color: var(--text-muted); padding: 0 2px; }
 .selected-file-remove:hover { color: var(--danger, #c0392b); }
@@ -131,36 +141,75 @@ a:hover, a:focus { color: var(--navy); text-decoration: underline; }
 }
 
 .btn {
-    display: inline-block;
-    background: var(--navy);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--btn-blue);
     color: #fff;
-    border: 1px solid var(--navy-dark);
-    border-radius: var(--radius-sm);
-    padding: 7px 16px;
+    border: 1px solid var(--btn-blue-dark);
+    border-radius: 5px;
+    padding: 7px 15px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: .01em;
+    font-family: inherit;
+    box-shadow: none;
+    transition: background .12s ease, border-color .12s ease, box-shadow .12s ease, transform .1s ease;
+}
+.btn:hover { background: var(--btn-blue-dark); border-color: var(--btn-blue-dark); text-decoration: none; box-shadow: 0 2px 5px rgba(41,101,150,.25); }
+.btn:active { transform: translateY(1px); box-shadow: none; }
+.btn-block { width: 100%; }
+.btn-danger { background: var(--danger); border-color: #96271f; }
+.btn-danger:hover { background: #96271f; border-color: #96271f; box-shadow: 0 2px 5px rgba(192,57,43,.25); }
+.btn-secondary { background: var(--btn-grey); border-color: var(--btn-grey-dark); }
+.btn-secondary:hover { background: var(--btn-grey-dark); border-color: var(--btn-grey-dark); box-shadow: 0 2px 5px rgba(60,72,84,.2); }
+.btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 4px; }
+.btn-lg { padding: 9px 20px; font-size: 13px; }
+.btn-outline { background: var(--btn-blue); color: #fff; border: 1px solid var(--btn-blue-dark); box-shadow: none; }
+.btn-outline:hover { background: var(--btn-blue-dark); color: #fff; box-shadow: 0 2px 5px rgba(41,101,150,.25); }
+
+/* Pill-shaped action buttons — same fully-rounded shape as the status tags, but with a
+   solid, darker fill and bold text so they still read clearly as clickable buttons. */
+.pill-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--btn-blue-dark);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 8px 18px;
     font-size: 12.5px;
     font-weight: 700;
-    cursor: pointer;
-    letter-spacing: .02em;
+    letter-spacing: .01em;
     font-family: inherit;
-    box-shadow: var(--shadow-sm);
-    transition: background .15s ease, box-shadow .15s ease, transform .1s ease;
+    cursor: pointer;
+    transition: background .12s ease, box-shadow .12s ease, transform .1s ease;
 }
-.btn:hover { background: var(--navy-dark); text-decoration: none; box-shadow: var(--shadow-md); }
-.btn:active { transform: translateY(1px); }
-.btn-block { width: 100%; }
-.btn-danger { background: var(--danger); border-color: #7a1a15; }
-.btn-danger:hover { background: #7a1a15; }
-.btn-secondary { background: #4d5a66; border-color: #3a444d; }
-.btn-secondary:hover { background: #3a444d; }
-.btn-sm { padding: 4px 10px; font-size: 11px; }
-.btn-lg { padding: 10px 20px; font-size: 13.5px; }
-.btn-outline { background: var(--navy); color: #fff; border: 1px solid var(--navy-dark); box-shadow: none; }
-.btn-outline:hover { background: var(--navy-dark); color: #fff; box-shadow: none; }
+.pill-btn:hover { background: #17466f; box-shadow: 0 2px 6px rgba(20,60,95,.3); text-decoration: none; }
+.pill-btn:active { transform: translateY(1px); }
+.pill-btn-lg { padding: 9px 22px; font-size: 13.5px; }
+.pill-btn-sm { padding: 5px 14px; font-size: 11px; }
+.pill-btn-danger { background: var(--danger); }
+.pill-btn-danger:hover { background: #96271f; box-shadow: 0 2px 6px rgba(150,39,31,.3); }
+.pill-btn-secondary { background: var(--btn-grey); }
+.pill-btn-secondary:hover { background: var(--btn-grey-dark); box-shadow: 0 2px 6px rgba(60,72,84,.25); }
 
 .error-msg {
     background: #fbeaea;
     border: 1px solid var(--danger);
     color: var(--danger);
+    padding: 8px 12px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+}
+.task-drawer-notice {
+    background: var(--accent-soft);
+    border: 1px solid #d9b871;
+    color: #7a5311;
     padding: 8px 12px;
     font-size: 12.5px;
     margin-bottom: 14px;
@@ -244,13 +293,13 @@ a:hover, a:focus { color: var(--navy); text-decoration: underline; }
     border-bottom-color: var(--navy);
     box-shadow: none;
 }
-.site-nav a.site-nav-brand {
+.site-nav .site-nav-brand {
+    display: inline-block;
     padding: 8px 20px 8px 0;
     margin: 0;
     border-radius: 0;
     border-bottom: none;
 }
-.site-nav a.site-nav-brand:hover { background: none; border-bottom: none; }
 .site-logo {
     height: 38px;
     width: auto;
@@ -265,18 +314,23 @@ a:hover, a:focus { color: var(--navy); text-decoration: underline; }
     font-size: 11.5px;
     padding: 8px 0;
 }
-.site-nav-user b { color: var(--navy); }
+.nav-profile-name { color: var(--navy); font-weight: 400; }
 .site-nav-user .logout-link { color: var(--danger); font-weight: 700; margin-left: 4px; }
 .nav-profile-link { display: flex; align-items: center; gap: 8px; color: var(--text-muted); text-decoration: none; }
 .nav-profile-link:hover { color: var(--navy); text-decoration: none; }
-.nav-profile-link:hover b { color: var(--navy); }
+.nav-profile-link:hover .nav-profile-name { color: var(--navy); }
 
+.nav-bell-wrap { position: relative; }
 .nav-bell {
     position: relative;
     display: flex;
     align-items: center;
     color: var(--navy);
     padding: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
 }
 .nav-bell:hover { color: var(--accent); text-decoration: none; }
 .nav-bell-badge {
@@ -293,6 +347,44 @@ a:hover, a:focus { color: var(--navy); text-decoration: underline; }
     min-width: 14px;
     text-align: center;
 }
+
+.nav-bell-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 440px;
+    max-height: 540px;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(20,30,45,.16);
+    z-index: 200;
+}
+.nav-bell-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--border-light); flex-shrink: 0; }
+.nav-bell-panel-head h3 { margin: 0; font-size: 16px; color: var(--text); }
+.nav-bell-panel-body { overflow-y: auto; flex: 1; min-height: 80px; }
+.nav-bell-loading, .nav-bell-empty { padding: 36px 20px; text-align: center; font-size: 13px; color: var(--text-muted); }
+.nav-bell-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text);
+    text-decoration: none;
+}
+.nav-bell-item:last-child { border-bottom: none; }
+.nav-bell-item:hover { background: #f5f8fb; text-decoration: none; }
+.nav-bell-item.unread { background: #eef5fc; }
+.nav-bell-item-dot { flex-shrink: 0; margin-top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--navy); }
+.nav-bell-item-body { flex: 1; min-width: 0; }
+.nav-bell-item-message { font-size: 13.5px; font-weight: 400; color: var(--text); line-height: 1.45; }
+.nav-bell-item.unread .nav-bell-item-message { font-weight: 700; }
+.nav-bell-item-meta { margin-top: 5px; font-size: 11.5px; color: var(--text-muted); }
+.nav-bell-panel-foot { padding: 12px 20px; border-top: 1px solid var(--border-light); text-align: center; flex-shrink: 0; }
+.nav-bell-panel-foot a { font-size: 12.5px; font-weight: 600; color: var(--navy); }
 
 .app-body { flex: 1; display: flex; min-width: 0; }
 
@@ -323,24 +415,29 @@ a:hover, a:focus { color: var(--navy); text-decoration: underline; }
 
 .site-sidebar {
     position: relative;
-    width: 190px;
+    width: 212px;
     flex-shrink: 0;
     background: #f3f9fd;
     border-right: 1px solid var(--border-light);
-    padding: 16px 0;
+    padding: 22px 0;
     transition: width .15s ease;
 }
-.site-sidebar.collapsed { width: 52px; }
+/* Collapsing hides .site-sidebar-title (the "EMPLOYEES"/"PROJECTS"/"ASSETS" label), which removes
+   the vertical space it took above the first icon — without it the icon rail starts noticeably
+   higher than the page heading beside it instead of level with it. Extra top padding here
+   restores that alignment. */
+.site-sidebar.collapsed { width: 52px; padding-top: 38px; }
 .site-sidebar.collapsed .site-sidebar-title,
 .site-sidebar.collapsed .sidebar-label { display: none; }
 .site-sidebar.collapsed .sidebar-link { justify-content: center; padding: 10px 0; }
 .site-sidebar.collapsed .sidebar-toggle svg { transform: rotate(180deg); }
 .site-sidebar-title {
-    padding: 0 14px 10px;
+    padding: 0 18px 14px;
+    margin-bottom: 4px;
     font-size: 10.5px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: .04em;
+    letter-spacing: .05em;
     color: var(--text-muted);
 }
 .sidebar-toggle {
@@ -364,8 +461,8 @@ a:hover, a:focus { color: var(--navy); text-decoration: underline; }
 .sidebar-link {
     display: flex;
     align-items: center;
-    gap: 9px;
-    padding: 9px 14px;
+    gap: 11px;
+    padding: 11px 18px;
     font-size: 12px;
     font-weight: 600;
     color: var(--text);
@@ -373,20 +470,26 @@ a:hover, a:focus { color: var(--navy); text-decoration: underline; }
     transition: background .12s ease, color .12s ease;
 }
 .sidebar-link svg { flex-shrink: 0; }
+.sidebar-link .sidebar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .sidebar-link:hover {
     background: none;
     color: var(--navy);
     text-decoration: none;
 }
 .sidebar-link.active {
-    background: none;
+    background: #eaf2fa;
     border-left-color: var(--navy);
     color: var(--navy);
 }
+.sidebar-sublink { font-weight: 500; padding: 10px 18px 10px 44px; }
+.sidebar-subsublink { font-weight: 500; padding: 9px 18px 9px 58px; font-size: 11.5px; }
+.sidebar-divider { margin-top: 10px; }
+.site-sidebar.collapsed .sidebar-sublink,
+.site-sidebar.collapsed .sidebar-subsublink { display: none; }
 
 .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
-.content { padding: 20px 24px; flex: 1; min-width: 0; }
+.content { padding: 24px 28px; flex: 1; min-width: 0; }
 
 .panel {
     background: var(--panel);
@@ -398,7 +501,7 @@ a:hover, a:focus { color: var(--navy); text-decoration: underline; }
 .panel .panel-head {
     padding: 10px 16px;
     border-bottom: 1px solid var(--border-light);
-    background: var(--navy-soft);
+    background: #fff;
     border-radius: 0;
     display: flex;
     flex-wrap: wrap;
@@ -423,18 +526,54 @@ a:hover, a:focus { color: var(--navy); text-decoration: underline; }
    continuous bordered card — a shared .panel border would otherwise draw a connecting line down
    both sides through that gap. */
 .panel-table { border: none; box-shadow: none; background: transparent; }
-.panel-table .panel-head { border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); margin-bottom: 14px; }
+.panel-table .panel-head { border: none; box-shadow: none; margin-bottom: 18px; }
 .panel-table .panel-body { border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); background: var(--panel); margin: 0; }
+
+/* Projects-by-department sections: a plain bold label instead of a bordered/boxed header —
+   a full boxed .panel-head repeated on every section (plus the blue used for the page's single
+   toolbar header) read as too boxy and too much blue. */
+.panel-table.dept-section { margin-bottom: 32px; }
+.panel-table.dept-section .panel-head {
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0 0 8px;
+    margin-bottom: 10px;
+}
+.panel-table.dept-section .panel-head h3 { font-size: 14px; }
+
+/* Fixed column widths so every Projects table (one per department, plus the flat
+   non-admin table) lines up on the same grid instead of each auto-sizing to its own content. */
+.project-table { table-layout: fixed; }
+.project-table th:nth-child(1), .project-table td:nth-child(1) { width: 16%; }
+.project-table th:nth-child(2), .project-table td:nth-child(2) { width: 42%; }
+.project-table th:nth-child(3), .project-table td:nth-child(3) { width: 26%; }
+.project-table th:nth-child(4), .project-table td:nth-child(4) { width: 16%; }
+.project-table td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Archived Projects has 5 columns (Code/Name/Department/Manager/Archived), not the 4 the base
+   .project-table widths above assume — override with its own column widths so the extra column
+   doesn't get squeezed into the base rule's unclaimed 0% remainder. */
+.archived-project-table th:nth-child(1), .archived-project-table td:nth-child(1) { width: 12%; }
+.archived-project-table th:nth-child(2), .archived-project-table td:nth-child(2) { width: 34%; }
+.archived-project-table th:nth-child(3), .archived-project-table td:nth-child(3) { width: 18%; }
+.archived-project-table th:nth-child(4), .archived-project-table td:nth-child(4) { width: 22%; }
+.archived-project-table th:nth-child(5), .archived-project-table td:nth-child(5) { width: 14%; }
+
+/* Projects/Assets tables use a smaller manager/no avatar, which made their rows read as
+   noticeably tighter than the Staff Directory table despite equal cell padding — a bit of
+   extra vertical padding here brings the row height back in line. */
+#projectsTable td, #assetsTable td { padding: 15px 16px; }
 
 table { width: 100%; border-collapse: collapse; }
 th, td {
     text-align: left;
-    padding: 8px 12px;
+    padding: 11px 15px;
     border: 1px solid var(--border-light);
     font-size: 12.5px;
 }
 th {
-    background: #eef1f4;
+    background: #f0f6fc;
     color: var(--text);
     font-weight: 700;
     text-transform: uppercase;
@@ -445,13 +584,19 @@ th {
 tbody tr:nth-child(even) td { background: #f7f8f9; }
 tbody tr:hover td { background: #eef4f9; }
 
+.table-bordered-heading { border: 1px solid var(--border-light); }
+.table-bordered-heading th, .table-bordered-heading td { border: none; }
+.table-bordered-heading th { border-bottom: 1px solid var(--border); }
+
+.plain-section-heading { margin: 20px 0 12px; padding-top: 18px; border-top: 1px solid var(--border-light); font-size: 15px; font-weight: 700; color: var(--text); }
+
 .row-name { display: flex; align-items: center; gap: 8px; }
 
 .avatar {
-    width: 26px; height: 26px;
+    width: 32px; height: 32px;
     display: inline-flex;
     align-items: center; justify-content: center;
-    font-size: 10.5px; font-weight: 700;
+    font-size: 13px; font-weight: 700;
     color: #fff;
     flex-shrink: 0;
     border-radius: 50%;
@@ -459,8 +604,8 @@ tbody tr:hover td { background: #eef4f9; }
 .avatar-admin { background: #96690f; }
 .avatar-manager { background: #1c4f80; }
 .avatar-employee { background: #3f6b2c; }
-.avatar-sm { width: 20px; height: 20px; font-size: 9px; }
-.avatar-lg { width: 46px; height: 46px; font-size: 15px; }
+.avatar-sm { width: 24px; height: 24px; font-size: 10.5px; }
+.avatar-lg { width: 56px; height: 56px; font-size: 18px; }
 .avatar-img { object-fit: cover; background: none; }
 /* Profile header avatar — a bigger square (not the small round list avatar), for the employee
    profile page and org-chart search result, ready to hold an actual photo once uploads exist. */
@@ -471,35 +616,222 @@ tbody tr:hover td { background: #eef4f9; }
 /* A boxed header with no enclosing panel body below it — used on pages like Create Employee
    where only the title bar should look "boxed"; the form fields sit directly on the page. */
 .standalone-panel-head {
-    background: var(--navy-soft);
-    border: 1px solid var(--border-light);
+    background: #fff;
     border-radius: 0;
-    box-shadow: var(--shadow-sm);
-    padding: 10px 16px;
-    margin-bottom: 20px;
+    padding: 15px 20px;
+    margin-bottom: 24px;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    gap: 10px 12px;
+    gap: 10px 14px;
+    /* Same thickness everywhere, whether or not a page's header carries search/filter tools —
+       those tools are what was making tool-less headers (bare title, e.g. Notifications) read
+       visibly thinner than ones like Organisation Structure or Projects by Department. */
+    min-height: 65px;
 }
 .standalone-panel-head h3 { margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--text); }
 .profile-photo-box { margin-bottom: 18px; }
+.profile-photo-dropzone {
+    width: 190px;
+    padding: 24px 16px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+}
+.profile-photo-dropzone:hover { border-color: var(--navy); background: var(--navy-soft); }
+.profile-photo-circle {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: var(--success-soft);
+    color: var(--success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+.profile-photo-preview-img { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; }
+.profile-photo-camera-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+.profile-photo-label { font-size: 13px; font-weight: 700; color: var(--text); }
 
-/* Flat notification rows — separated by a faint line, no table look (matches .forum-row). */
-.notif-list { }
-.notif-row { display: flex; align-items: flex-start; gap: 18px; padding: 14px 4px; border-bottom: 1px solid var(--border-light); }
-.notif-row:last-child { border-bottom: none; }
-.notif-project { flex: 0 0 100px; font-weight: 700; font-size: 12.5px; }
-.notif-from { flex: 0 0 140px; font-size: 12.5px; color: var(--text-muted); }
-.notif-message { flex: 1; min-width: 0; font-size: 13px; }
-.notif-date { flex: 0 0 90px; font-size: 11.5px; color: var(--text-muted); text-align: right; }
-.avatar-photo { width: 130px; height: 130px; font-size: 42px; border-radius: 0; }
-img.avatar-photo { object-fit: cover; display: block; }
-.profile-photo-actions { display: flex; gap: 12px; margin-top: 8px; }
+/* Department index — a flat, divider-separated list (matches Staff's .dept-card-list spacing,
+   no enclosing box) instead of a bordered table grid; each row is one clickable link straight
+   to that department's page. */
+.dept-list { }
+.dept-list-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 24px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+}
+/* Inset from the row's own edges (matching its horizontal padding) instead of a border-bottom
+   spanning the full page width, so the divider reads as part of the list rather than a stray
+   line running edge to edge. */
+.dept-list-row:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 0;
+    border-bottom: 1px solid var(--border-light);
+}
+.dept-list-row:hover { color: var(--navy); text-decoration: none; background: none; }
+.dept-list-chevron { flex-shrink: 0; color: var(--text-muted); }
+.dept-list-row:hover .dept-list-chevron { color: var(--navy); }
+
+/* Lines the heading up under the top nav's "Staff" link when the sidebar is collapsed (52px wide)
+   — .content then starts far enough left of "Staff" that pushing it right lands it there cleanly.
+   With the sidebar open (212px wide), "Staff" itself sits inside that reserved 212px column, so
+   there is no margin that both lands under it AND stays clear of the sidebar; forcing one caused
+   the heading to render on top of the sidebar instead. Left at its natural flush position there,
+   which is what every other page with an open sidebar already does. Wrapping both the heading and
+   the department list keeps them moving together rather than only realigning the heading.
+   The block's true left inset from the browser edge is 52px (sidebar) + 87px (margin-left + the
+   .content padding) = 139px total. A right margin merely equal to the left one only balances the
+   gap *after* the sidebar, not the total whitespace on each side as actually seen from the window's
+   edges — the sidebar itself has no mirror on the right, so matching margins still read as
+   left-heavy. Adding that 52px to the right margin (59 + 52 = 111) makes the total right-side
+   inset 139px too, so both sides read as visually equal. */
+.site-sidebar.collapsed ~ .main .dept-page { margin-left: 59px; margin-right: 111px; }
+/* Projects/Assets department index reuses the shared .standalone-panel-head component, whose
+   default 20px side padding doesn't match .dept-list-row's 24px — scoped here rather than on
+   .standalone-panel-head itself, which other pages also use with the original padding. */
+.dept-page .standalone-panel-head { padding-left: 24px; padding-right: 24px; }
+
+/* "Card" variant of the department index — a soft gradient hero header (a faint bottom line,
+   not a full box) plus a rounded white list with a chevron. */
+.dept-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 15px 24px;
+    margin-bottom: 24px;
+    border-radius: 0;
+    background: #fff;
+}
+.dept-hero h3 { margin: 0; font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: .02em; text-transform: uppercase; }
+.dept-hero-search { background: #fff; }
+
+.dept-card-list { }
+.dept-card-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 24px;
+    color: var(--text);
+}
+.dept-card-row:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 0;
+    border-bottom: 1px solid var(--border-light);
+}
+.dept-card-row:hover { text-decoration: none; }
+.dept-card-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.dept-card-chevron { flex-shrink: 0; color: var(--text-muted); }
+.dept-card-row:hover .dept-card-chevron { color: var(--navy); }
+
+/* Generic Prev/Next pager for department drill-down lists (distinct from .forum-pagination). */
+.pagination-bar { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 24px 0 6px; }
+.pagination-info { font-size: 12px; color: var(--text-muted); }
+.pagination-bar .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Notifications page — flat (no card/border, no blue title band), sidebar sits flush against
+   the "Notifications" title above it, mirrors the nav bell popup's row style for individual
+   rows. Generous top padding + centering mimics Jira's notifications page spacing. */
+/* Percentage margins (not a centered fixed max-width) so the left edge sits roughly under the
+   nav's later links (like Asset Management) instead of hugging the page edge, while the right
+   margin always stays comfortably wide — on a centered fixed-width box, widening it enough to
+   look full made the divider lines run almost to the true right edge. */
+.notif-page-layout { display: flex; align-items: flex-start; gap: 48px; margin: 0 17% 0 9%; padding-top: 36px; }
+.notif-sidebar { flex: 0 0 190px; display: flex; flex-direction: column; gap: 2px; }
+.notif-sidebar h2 { margin: 0 0 28px; font-size: 22px; font-weight: 700; color: var(--text); }
+.notif-sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    border: none;
+    border-left: 3px solid transparent;
+    background: none;
+    font-size: 14px;
+    font-weight: 400;
+    font-family: inherit;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+}
+.notif-sidebar-link svg { flex-shrink: 0; color: var(--text-muted); }
+.notif-sidebar-link:hover { background: #f5f8fb; }
+.notif-sidebar-link.active { background: #eaf2fa; border-left-color: var(--navy); color: var(--navy); }
+.notif-sidebar-link.active svg { color: var(--navy); }
+.notif-page { flex: 1; min-width: 0; }
+.notif-page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 14px; margin-bottom: 20px; border-bottom: 1px solid var(--border-light); }
+.notif-page-head-title { margin: 0; font-size: 16px; font-weight: 700; color: var(--text); }
+.notif-page-actions { display: flex; align-items: center; gap: 20px; }
+.notif-page-actions .filter-select { font-size: 12.5px; padding: 6px 30px 6px 14px; }
+.notif-group { margin-bottom: 32px; }
+.notif-group-heading { margin: 0 0 6px; padding-bottom: 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); border-bottom: 1px solid var(--border-light); }
+.notif-page-row { display: flex; align-items: flex-start; gap: 10px; padding: 18px 12px; border-bottom: 1px solid var(--border-light); border-radius: 8px; }
+.notif-page-row:last-child { border-bottom: none; }
+.notif-page-row:hover { background: #f5f8fb; }
+.notif-page-row.unread { background: #eef5fc; }
+.notif-row-check { display: flex; align-items: center; padding-top: 3px; cursor: pointer; }
+.notif-page-row-link { display: flex; align-items: flex-start; gap: 16px; flex: 1; min-width: 0; color: var(--text); text-decoration: none; }
+.notif-page-row-link:hover { text-decoration: none; }
+.notif-icon-badge { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.notif-page-row .nav-bell-item-dot { margin-top: 8px; margin-left: 4px; flex-shrink: 0; }
+.notif-page-row-body { flex: 1; min-width: 0; }
+.notif-page-row-message { font-size: 13.5px; font-weight: 400; line-height: 1.6; }
+.notif-page-row-message strong { font-weight: inherit; }
+.notif-page-row.unread .notif-page-row-message { font-weight: 600; }
+.notif-page-row-meta { margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+.notif-select-all-label { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-muted); cursor: pointer; }
+
+.pa-hint { font-size: 11.5px; color: var(--text-muted); }
 .link-btn { background: none; border: none; padding: 0; font-size: 12px; font-weight: 600; color: var(--navy); cursor: pointer; }
 .link-btn:hover { text-decoration: underline; }
 .link-btn-danger { color: var(--danger); }
+
+/* Create Staff: photo box sits beside the personal-info field grid instead of stacked above it. */
+.pa-personal-row { display: flex; align-items: flex-start; gap: 32px; }
+.pa-personal-row .profile-photo-box { margin-bottom: 0; flex-shrink: 0; }
+.pa-personal-row .form-grid { flex: 1; min-width: 0; }
 
 .tag {
     display: inline-block;
@@ -508,9 +840,9 @@ img.avatar-photo { object-fit: cover; display: block; }
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .02em;
-    background: var(--navy-soft);
-    color: var(--navy);
-    border: 1px solid #a9bfcf;
+    background: #e3edfb;
+    color: #3c78c4;
+    border: 1px solid transparent;
     border-radius: 10px;
 }
 .tag-admin { background: var(--accent-soft); color: #7a5311; border-color: #d9b871; }
@@ -555,6 +887,7 @@ img.avatar-photo { object-fit: cover; display: block; }
 .activity-avatar { margin-right: 8px; vertical-align: middle; }
 
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 28px; }
+.form-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 22px; }
 
 .profile-field-grid { gap: 16px 28px; }
 .profile-field { display: flex; flex-direction: column; gap: 2px; }
@@ -617,107 +950,72 @@ img.avatar-photo { object-fit: cover; display: block; }
 }
 .remove-row:hover { background: #fbeaea; }
 
-/* New Project page */
-.pa-page { max-width: 820px; }
+/* New Project page — centered rather than flush-left, since a capped-width form flush against
+   the sidebar reads as off-balance on wide screens. Wraps the breadcrumb/header too, not just
+   the form, so the title stays aligned with the form below it instead of only the form centering.
+   Plain margin:0 auto centers within .content (i.e. the space *after* the sidebar), which still
+   reads left-heavy overall since the sidebar itself has no mirror on the right — the total gap
+   from the browser's left edge (sidebar + margin) ends up bigger than the plain right margin.
+   Shifting margin-left left by half the sidebar's width balances the *total* left/right gaps as
+   actually seen from the window's edges. Two widths needed since the collapsed (52px) and open
+   (212px) sidebar states need different compensation. */
+.pa-page-wrap { max-width: 1100px; margin-left: auto; margin-right: auto; }
+.site-sidebar.collapsed ~ .main .pa-page-wrap { margin-left: calc((100% - 1100px) / 2 - 26px); }
+.site-sidebar:not(.collapsed) ~ .main .pa-page-wrap { margin-left: calc((100% - 1100px) / 2 - 106px); }
+.pa-page { max-width: 1100px; }
 .pa-header { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light); }
 .pa-header h2 { margin: 0 0 4px; font-size: 21px; color: var(--text); }
 .pa-header-sub { margin: 0; font-size: 12.5px; color: var(--text-muted); }
 .pa-panel { border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
 .pa-panel .panel-head h3 { font-size: 12.5px; }
 
-.wizard-steps {
-    display: flex;
-    align-items: center;
-    margin-bottom: 22px;
-    padding-bottom: 18px;
-    border-bottom: 1px solid var(--border-light);
-    flex-wrap: wrap;
-    row-gap: 10px;
-}
-.wizard-step { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
-.wizard-step.active { color: var(--navy); }
-.wizard-step.done { color: var(--success); }
-.wizard-step-num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    background: var(--border-light);
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 700;
-    flex-shrink: 0;
-}
-.wizard-step.active .wizard-step-num { background: var(--navy); color: #fff; }
-.wizard-step.done .wizard-step-num { background: var(--success-soft); color: var(--success); }
-.wizard-step-connector { flex: 1; height: 1px; background: var(--border-light); margin: 0 8px; min-width: 16px; max-width: 44px; }
-.wizard-step-connector.done { background: var(--success); }
-@media (max-width: 700px) {
-    .wizard-step-label { display: none; }
-    .wizard-step-connector { max-width: 20px; }
+/* Grouped form sections (project_add.php, project_add_team.php, project_add_tasks.php) — a
+   titled/described box per logical group of fields, instead of one flat boxed form. */
+.pa-section { background: var(--panel); border: 1px solid var(--border-light); border-radius: 10px; padding: 20px 22px; margin-bottom: 16px; }
+.pa-section-plain { background: none; border: none; border-radius: 0; padding: 0; margin-bottom: 8px; }
+.pa-section-plain + .pa-section-plain { border-top: 1px solid var(--border-light); padding-top: 22px; margin-top: 14px; }
+.pa-section-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px; }
+.pa-section-icon { flex-shrink: 0; margin-top: 2px; color: var(--navy); }
+.required-mark { color: var(--danger); font-weight: 700; }
+.pa-section-head-divided { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-light); }
+.pa-section-head h3 { margin: 0 0 2px; font-size: 14px; color: var(--text); }
+.pa-section-head p { margin: 0; font-size: 12px; color: var(--text-muted); }
+.pa-optional { font-weight: 400; color: var(--text-muted); font-size: 12px; }
+.pa-section-body.form-grid { margin-bottom: 0; }
+.pa-section-body .field:last-child { margin-bottom: 0; }
+.pa-char-count { display: block; text-align: right; font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+/* Create Staff: centered like Create Project's .pa-page-wrap, for a consistent look across the
+   site's "add" forms — same sidebar-width compensation, see the comment above .pa-page-wrap. */
+.pa-page-narrow { max-width: 1100px; margin-left: auto; margin-right: auto; }
+.site-sidebar.collapsed ~ .main .pa-page-narrow { margin-left: calc((100% - 1100px) / 2 - 26px); }
+.site-sidebar:not(.collapsed) ~ .main .pa-page-narrow { margin-left: calc((100% - 1100px) / 2 - 106px); }
+
+/* Create Staff: wider box padding + larger input boxes than the site's default compact forms. */
+.pa-form-spacious .pa-section { padding: 28px 32px; background: none; border: none; border-radius: 0; }
+.pa-form-spacious .form-grid,
+.pa-form-spacious .form-grid-3 { gap: 22px 32px; }
+.pa-form-spacious .field { margin-bottom: 0; }
+.pa-form-spacious .field label { margin-bottom: 8px; font-weight: 400; }
+.pa-form-spacious .link-btn { font-weight: 400; }
+
+/* Create Project: unbold everything except the section headings. */
+#projectForm .field label { font-weight: 400; }
+#projectForm .link-btn { font-weight: 400; }
+.pa-form-spacious .field input,
+.pa-form-spacious .field select {
+    padding: 11px 14px;
+    font-size: 14px;
+    border-radius: 8px;
 }
 
-/* Choice cards — used by the Layout step and the Tasks step's "how to start" screen */
-.choice-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 20px; }
-.choice-card {
-    position: relative;
-    display: block;
-    background: var(--panel);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    padding: 20px 18px;
-    cursor: pointer;
-    transition: border-color .15s ease, box-shadow .15s ease, transform .1s ease;
-}
-.choice-card:hover { border-color: var(--navy); box-shadow: var(--shadow-md); }
-.choice-card-input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
-.choice-card:has(.choice-card-input:checked) { border-color: var(--navy); background: var(--navy-soft); box-shadow: var(--shadow-md); }
-.choice-card:has(.choice-card-input:checked) .choice-card-icon { background: var(--navy); color: #fff; }
-.choice-card.disabled { cursor: not-allowed; opacity: .55; }
-.choice-card.disabled:hover { border-color: var(--border-light); box-shadow: var(--shadow-sm); }
-.choice-card-icon {
-    width: 40px; height: 40px;
-    border-radius: var(--radius-sm);
-    background: var(--navy-soft);
-    color: var(--navy);
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 12px;
-}
-.choice-card-title { font-size: 13.5px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
-.choice-card-desc { font-size: 11.5px; color: var(--text-muted); line-height: 1.5; }
-.choice-card-badge {
-    position: absolute;
-    top: 12px; right: 12px;
-    font-size: 9px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .03em;
-    padding: 2px 7px;
-    border-radius: 9px;
-    background: var(--accent-soft);
-    color: #7a5311;
-}
+.pa-dropzone { border: 1px dashed var(--border); border-radius: 8px; padding: 26px 20px; text-align: center; color: var(--text-muted); transition: border-color .12s ease, background .12s ease; }
+.pa-dropzone svg { color: var(--text-muted); margin-bottom: 8px; }
+.pa-dropzone p { margin: 0 0 4px; font-size: 12.5px; }
+.pa-dropzone .field-hint { margin-top: 6px; }
+.pa-dropzone.dragover { border-color: var(--navy); background: var(--navy-soft); }
+.pa-dropzone .link-btn { font-size: 12.5px; }
 
-/* Team table (Step 3) */
-.table-scroll { overflow-x: auto; }
-.team-table-employee { display: flex; align-items: center; gap: 8px; }
-.team-table input[type="text"],
-.team-table select { padding: 5px 7px; font-size: 12px; }
-.btn-icon-danger {
-    width: 26px;
-    height: 26px;
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-sm);
-    background: var(--panel);
-    color: var(--danger);
-    font-size: 16px;
-    line-height: 1;
-    cursor: pointer;
-    transition: background .15s ease, border-color .15s ease;
-}
-.btn-icon-danger:hover { background: var(--danger-soft); border-color: var(--danger); }
 .member-card-permission {
     display: inline-block;
     padding: 1px 7px;
@@ -730,37 +1028,22 @@ img.avatar-photo { object-fit: cover; display: block; }
     color: #7a5311;
 }
 
-/* Review step */
-.review-summary { display: flex; flex-direction: column; }
-.review-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 12.5px; }
-.review-row:last-child { border-bottom: none; }
-.review-label { color: var(--text-muted); font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em; flex-shrink: 0; }
-.review-value { font-weight: 600; color: var(--text); text-align: right; }
-
-/* Success step */
-.success-page { max-width: 480px; margin: 20px auto; text-align: center; padding: 10px 20px 30px; }
-.success-icon {
-    width: 68px; height: 68px;
-    border-radius: 50%;
-    background: var(--success-soft);
-    color: var(--success);
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 18px;
-}
-.success-title { font-size: 20px; color: var(--text); margin: 0 0 6px; }
-.success-sub { color: var(--text-muted); font-size: 12.5px; margin: 0 0 26px; }
-.success-sub:has(+ .success-project-id) { margin-bottom: 4px; }
-.success-summary { text-align: left; margin-bottom: 28px; }
-.success-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .pa-actions {
     display: flex;
+    justify-content: flex-end;
     gap: 10px;
     margin-top: 8px;
     padding-top: 18px;
     border-top: 1px solid var(--border-light);
 }
+.pa-form-spacious .pa-actions { padding-left: 32px; }
+/* Squared-off (not pill-shaped) buttons for the Create Staff/Project/Asset forms — a subtler,
+   more form-like shape than the fully-rounded pill used for inline row actions elsewhere. */
+.pa-actions .pill-btn { border-radius: 6px; padding: 10px 22px; }
+.pa-actions .pill-btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+.pa-actions .pill-btn-secondary:hover { background: var(--panel-hover, #f5f7fa); box-shadow: none; }
 
-.breadcrumb { font-size: 11.5px; color: var(--text-muted); margin-bottom: 14px; }
+.breadcrumb { font-size: 11.5px; color: var(--text-muted); margin-bottom: 18px; }
 .breadcrumb a { font-weight: 700; }
 
 .actions a, .actions button { font-size: 11px; margin-right: 8px; }
@@ -827,38 +1110,46 @@ img.avatar-photo { object-fit: cover; display: block; }
 }
 .modal-box {
     background: #fff;
-    border: 1px solid var(--navy);
-    width: 480px;
+    border: none;
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(15, 35, 60, .25);
+    width: 520px;
     max-width: 100%;
+    /* Not overflow:hidden — an emp-picker's results dropdown is absolutely positioned and
+       extends below its input, past the modal box's own edge; clipping here cut it off. */
+    overflow: visible;
 }
 .modal-head {
-    padding: 11px 16px;
-    border-bottom: 1px solid var(--border);
-    background: #f2f4f6;
+    padding: 22px 26px 4px;
+    border-bottom: none;
+    background: none;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 .modal-head h3 {
     margin: 0;
-    font-size: 13px;
+    font-size: 17px;
     color: var(--text);
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .02em;
+    text-transform: none;
+    letter-spacing: normal;
 }
 .modal-close {
     background: none;
     border: none;
-    font-size: 20px;
+    font-size: 22px;
     cursor: pointer;
     color: var(--text-muted);
     line-height: 1;
     padding: 0 2px;
 }
 .modal-close:hover { color: var(--text); }
-.modal-body { padding: 16px; }
-.modal-body .form-grid { grid-template-columns: 1fr 1fr; }
+.modal-body { padding: 18px 26px 26px; }
+.modal-body .form-grid { grid-template-columns: 1fr 1fr; gap: 16px 20px; }
+.modal-body .form-grid .field { margin-bottom: 0; }
+.modal-body .field-full { grid-column: 1 / -1; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-light); }
 
 /* Delete Employee modal */
 .delete-emp-warning {
@@ -917,19 +1208,23 @@ img.avatar-photo { object-fit: cover; display: block; }
     overflow-y: auto;
     z-index: 30;
 }
+/* Stacked, not side-by-side — name and code/role never fit on one line in the narrower
+   pickers (task drawer, bulk bar), so avoid the overlap risk entirely by always giving the
+   meta line its own row underneath, indented past the avatar. */
 .emp-picker-item {
     padding: 6px 9px;
     cursor: pointer;
     display: flex;
-    justify-content: space-between;
-    gap: 8px;
+    flex-direction: column;
+    gap: 2px;
     font-size: 12px;
     border-bottom: 1px solid var(--border-light);
 }
 .emp-picker-item:last-child { border-bottom: none; }
 .emp-picker-item:hover { background: var(--navy-soft); }
+.emp-picker-item-who { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .emp-picker-item-name { font-weight: 600; }
-.emp-picker-item-meta { color: var(--text-muted); font-size: 10.5px; white-space: nowrap; }
+.emp-picker-item-meta { color: var(--text-muted); font-size: 10.5px; margin-left: 31px; }
 
 /* Search bar */
 .search-bar {
@@ -938,7 +1233,8 @@ img.avatar-photo { object-fit: cover; display: block; }
     gap: 7px;
     background: #fff;
     border: 1px solid var(--border);
-    padding: 6px 10px;
+    border-radius: 999px;
+    padding: 8px 16px;
     min-width: 250px;
 }
 .search-bar:focus-within {
@@ -963,25 +1259,46 @@ img.avatar-photo { object-fit: cover; display: block; }
 }
 .search-meta { font-size: 11.5px; color: var(--text-muted); margin-bottom: 10px; }
 
+/* Pill-shaped filter dropdown — appearance:none plus a custom chevron so a toolbar's status/
+   department/category <select> reads as a rounded button, matching .search-bar next to it,
+   instead of a plain browser-default dropdown. */
+.filter-select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 30px 8px 16px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text);
+    background-color: var(--panel);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23667085' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+}
+.filter-select:hover { border-color: var(--navy); }
+.filter-select:focus { outline: 2px solid var(--navy-soft); outline-offset: 1px; }
+
 /* Org chart */
 .org-chart {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 24px 16px;
+    padding: 28px 16px;
 }
-.org-roots { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; }
+.org-roots { display: flex; justify-content: center; gap: 36px; flex-wrap: wrap; }
 .org-root-col { display: flex; flex-direction: column; align-items: center; }
 
 .org-node {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     background: #fff;
-    border: 1px solid var(--border);
-    border-top: 3px solid var(--navy);
-    padding: 10px 16px;
-    min-width: 270px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 12px 36px 12px 14px;
+    min-width: 300px;
     text-align: left;
     cursor: pointer;
     color: var(--text);
@@ -990,41 +1307,55 @@ img.avatar-photo { object-fit: cover; display: block; }
 }
 .org-node:hover { text-decoration: none; color: var(--navy); }
 .org-node:hover { box-shadow: var(--shadow-md); }
-.org-node.org-highlight { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
-.org-node .org-avatar { margin: 0; border-radius: 0; width: 70px; height: 70px; font-size: 22px; flex-shrink: 0; }
-.org-node .org-avatar-photo { width: 70px; height: 70px; border-radius: 0; object-fit: cover; display: block; flex-shrink: 0; }
-.org-node .org-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.org-node .org-name { font-size: 15px; color: var(--text); }
-.org-node .org-role { display: block; font-size: 11.5px; color: var(--text); font-weight: 400; margin-top: 0; }
+.org-node.org-highlight { border-color: #3c78c4; box-shadow: 0 0 0 3px rgba(60, 120, 196, .18); }
+.org-node.org-node-static { cursor: default; }
+.org-node.org-node-static:hover { color: var(--text); box-shadow: none; }
+.org-node .org-avatar { margin: 0; border-radius: 0; width: 96px; height: 96px; font-size: 28px; flex-shrink: 0; }
+.org-node .org-avatar-photo { width: 96px; height: 96px; border-radius: 0; object-fit: cover; display: block; flex-shrink: 0; }
+.org-node .org-info { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.org-node .org-name { font-size: 16px; color: var(--text); }
+.org-node .org-role { display: block; font-size: 12px; color: var(--text); font-weight: 400; margin-top: 0; }
+.org-node .org-node-contact { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.org-node .org-node-contact svg { flex-shrink: 0; }
 .org-node.self { border-top-color: var(--accent); background: var(--accent-soft); }
 .org-node.self .org-name { color: var(--navy); font-weight: 700; }
-.org-stem { width: 1px; height: 20px; background: var(--border); }
+.org-stem { width: 1px; height: 24px; background: var(--border-light); }
 .org-children {
     display: flex;
     justify-content: center;
-    gap: 24px;
-    border-top: 1px solid var(--border);
-    padding-top: 20px;
+    gap: 28px;
+    border-top: 1px solid var(--border-light);
+    padding-top: 24px;
     margin-top: 0;
     flex-wrap: wrap;
+    /* Sized to the row's actual content instead of the full parent width — otherwise the
+       top border reads as a stray line spanning the whole page. */
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
 }
+/* One child needs no fan-out bar at all — just the vertical stems above/below it read as a
+   clean single connector, instead of a horizontal line matching whatever width that child's
+   own descendants happen to take up. */
+.org-children.org-children-single { border-top: none; }
 .org-child-col { display: flex; flex-direction: column; align-items: center; position: relative; }
 .org-child-col::before {
     content: '';
     position: absolute;
-    top: -20px;
+    top: -24px;
     width: 1px;
-    height: 20px;
-    background: var(--border);
+    height: 24px;
+    background: var(--border-light);
 }
 .org-no-reports { color: var(--text-muted); font-size: 11.5px; margin-top: 20px; }
 .org-node-box { position: relative; display: inline-block; }
 .org-node-kebab {
     position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 20px;
-    height: 20px;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1033,13 +1364,56 @@ img.avatar-photo { object-fit: cover; display: block; }
     border-radius: var(--radius-sm);
     color: var(--text-muted);
     cursor: pointer;
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1;
 }
 .org-node-kebab:hover { background: var(--navy-soft); color: var(--navy); }
-.org-search-result { background: var(--navy-soft); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 18px; font-size: 12.5px; }
+/* This page has no sidebar, so .content sits flush at the viewport's own padding — lining the
+   heading and profile card up under the top nav's "Staff" link (rather than the page's own flush
+   left edge) takes this fixed offset, measured directly against that link. Only wraps the
+   heading/profile/prompt — the tree (#orgChartWrap) sits outside .org-page and stays centered on
+   the page, unaffected. */
+.org-page { margin-left: 131px; }
+/* Percentage padding (not a fixed max-width) so the search bar sits inset from the row's own
+   right edge by a share of whatever width is actually available — a fixed-pixel cap looked fine
+   on a normal-width screen but stranded the search bar in the middle of the page on a very wide
+   one, since it doesn't scale with the viewport. The tree below is unaffected — it isn't nested
+   inside this row. */
+.org-panel-head { margin-bottom: 12px; padding-left: 0; padding-right: 12%; }
+.org-search-result { background: none; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 18px; font-size: 12.5px; }
 .org-top-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); text-align: center; margin-bottom: 6px; }
-.org-employee-info { margin-bottom: 20px; max-width: 560px; }
+.org-info-block { margin-bottom: 20px; }
+
+/* Employee profile card at the top of a search result: identity + contact on the left,
+   Reports To / Stream / Group / Projects mini-cards on the right, and a stats strip below. */
+.org-profile-card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 0;
+}
+.org-profile-left { display: flex; gap: 18px; align-items: flex-start; }
+.org-profile-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 112px;
+    height: 112px;
+    border-radius: 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    object-fit: cover;
+}
+.org-profile-heading { min-width: 0; }
+.org-profile-name-line { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+.org-profile-name { font-size: 21px; font-weight: 700; color: #000; }
+.org-profile-code { display: block; font-size: 21px; font-weight: 700; color: #000; margin-bottom: 8px; }
+.org-profile-role-line { font-size: 13.5px; color: #000; margin-bottom: 8px; }
+.org-profile-contact { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 13.5px; color: #000; margin-bottom: 8px; }
+.org-profile-contact:last-child { margin-bottom: 0; }
+.org-profile-contact span { display: inline-flex; align-items: center; gap: 6px; }
 
 /* Kanban / tasks */
 .kanban {
@@ -1093,16 +1467,22 @@ img.avatar-photo { object-fit: cover; display: block; }
 .kcol-dot-review { background: var(--accent); }
 .kcol-dot-done { background: var(--success); }
 
-.pill-select { display: inline-block; border-radius: 12px; padding: 1px 8px 1px 10px; background: var(--navy-soft); color: var(--navy); }
+/* Colored via the same .tag-low/.tag-medium/.tag-high/.tag-todo/.tag-in_progress/.tag-review/
+   .tag-done classes the Grid table uses — .pill-select itself only supplies the pill shape
+   (no background/color of its own), so the drawer's Priority/Status controls match the
+   table's color scheme exactly instead of always reading as flat navy. */
+.pill-select { display: inline-block; border-width: 1px; border-style: solid; border-radius: 12px; padding: 1px 8px 1px 10px; }
 .pill-select select {
     border: none;
     background: none;
     font: inherit;
-    font-weight: 700;
+    font-weight: 400;
     color: inherit;
     padding: 3px 2px;
     cursor: pointer;
+    outline: none;
 }
+.pill-select select:focus-visible { outline: 2px solid var(--btn-blue); outline-offset: 2px; border-radius: 4px; }
 .pill-select select:disabled { cursor: default; }
 .task-card .task-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; font-size: 10.5px; color: var(--text-muted); }
 .task-card .task-due { white-space: nowrap; }
@@ -1150,25 +1530,44 @@ img.avatar-photo { object-fit: cover; display: block; }
 
 /* % Complete progress bar — Grid view */
 
-/* Grid rows want a plain calendar-icon + date instead of the colored pill Board cards use */
+/* Grid rows show Due as plain text, matching the Created/Updated columns — only color
+   still calls out overdue/unset tasks. */
 .task-list-row .due-badge {
-    display: inline-flex; align-items: center; gap: 5px;
+    display: inline-block;
     padding: 0; border-radius: 0; background: none !important; font-size: 12.5px; font-weight: 400;
     color: var(--text);
-}
-.task-list-row .due-badge::before {
-    content: ""; width: 12px; height: 12px; flex-shrink: 0;
-    background-color: var(--text-muted);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E") no-repeat center / contain;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E") no-repeat center / contain;
 }
 .task-list-row .due-badge-late { color: var(--danger); }
 .task-list-row .due-badge-none { color: var(--text-muted); }
 
+.task-list-date-late { color: var(--danger); }
+
+/* Grid/List "Assignee" column: avatar + name per row, stacked vertically for multiple assignees. */
+.assignee-name-list { display: flex; flex-direction: column; gap: 4px; }
+.assignee-name-row { display: flex; align-items: center; gap: 6px; }
+.assignee-name-text { font-size: 12px; color: var(--text); white-space: nowrap; }
+
+/* Flags an assignee who's been removed from Members but is still assigned to this (not-yet-done)
+   task — their assignment/history is untouched, this is purely a "you may want to reassign this"
+   nudge for managers. Clicking it opens the task drawer, same as clicking anywhere on the row. */
+.assignee-name-col { display: flex; flex-direction: column; }
+.assignee-name-row-stale .assignee-name-text { color: var(--text-muted); }
+.assignee-stale-badge {
+    display: block;
+    padding: 0;
+    background: none;
+    color: var(--danger);
+    font-size: 10px;
+    font-weight: 400;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
 /* Multi-select employee picker chips — mirrors .selected-file-row's visual language */
 .emp-picker-multi-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 .emp-picker-multi-chips:empty { margin-bottom: 0; }
-.emp-picker-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; background: var(--navy-soft); color: var(--navy); border: 1px solid var(--border-light); border-radius: 14px; font-size: 12px; }
+.emp-picker-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 3px; background: #fff; color: var(--text); border: 1px solid var(--border-light); border-radius: 16px; font-size: 12px; font-weight: 600; box-shadow: var(--shadow-sm); }
+.emp-picker-chip .avatar { flex-shrink: 0; }
 .emp-picker-chip-remove { background: none; border: none; cursor: pointer; font-size: 14px; line-height: 1; color: var(--text-muted); padding: 0; }
 .emp-picker-chip-remove:hover { color: var(--danger); }
 
@@ -1303,7 +1702,7 @@ img.avatar-photo { object-fit: cover; display: block; }
 .member-card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 12px;
+    gap: 24px;
     padding: 14px;
 }
 .member-card {
@@ -1312,21 +1711,21 @@ img.avatar-photo { object-fit: cover; display: block; }
     border: 1px solid var(--border-light);
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow-sm);
-    padding: 12px 30px 12px 12px;
+    padding: 16px 32px 16px 16px;
     cursor: pointer;
 }
 .member-card:hover { box-shadow: var(--shadow-md); }
 .member-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.member-card-head .row-name { display: block; }
 .member-card-head .row-name a { font-weight: 700; }
+.member-card-id { margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--text); }
 .member-card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; }
 .member-card-role {
     display: inline-block;
     margin-top: 6px;
-    padding: 2px 8px;
-    font-size: 10.5px;
-    background: var(--navy-soft);
-    color: var(--navy);
-    border-radius: 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text);
 }
 .member-card .task-kebab {
     position: absolute;
@@ -1348,13 +1747,16 @@ img.avatar-photo { object-fit: cover; display: block; }
 }
 .member-card .task-kebab:hover { background: var(--navy-soft); color: var(--navy); border-radius: var(--radius-sm); }
 
-/* Task list view — flat, minimal table styling with visible grid lines (rows + columns) */
+/* Task list view — flat, minimal table styling with visible grid lines (rows + columns).
+   No trailing kebab column — per-task delete happens via the checkbox + bulk "Delete" action,
+   or from inside the task drawer, so the row doesn't need its own action button. */
 .task-list { border: 1px solid var(--border-light); border-radius: 0; overflow: hidden; }
 .task-list-head, .task-list-row {
     display: grid;
-    grid-template-columns: 1fr 150px 100px 90px 90px 32px;
+    grid-template-columns: 1fr 150px 100px 90px 140px 140px 140px;
     align-items: stretch;
 }
+.task-list-date { font-size: 12.5px; color: var(--text); white-space: nowrap; }
 .task-list-head > *, .task-list-row > * {
     display: flex;
     align-items: center;
@@ -1363,16 +1765,14 @@ img.avatar-photo { object-fit: cover; display: block; }
     border-right: 1px solid var(--border-light);
 }
 .task-list-head > *:last-child, .task-list-row > *:last-child { border-right: none; }
-/* Narrow icon-only columns (select-all checkbox, row kebab) get centered, minimal padding
-   instead of the standard cell padding, which is too wide for a 22-32px column. */
-.task-list-check,
-.task-list-head > *:last-child,
-.task-list-row > *:last-child {
+/* Narrow icon-only select-all/checkbox column gets centered, minimal padding instead of the
+   standard cell padding, which is too wide for its 22px column. */
+.task-list-check {
     padding: 0;
     justify-content: center;
 }
 .task-list-head {
-    background: #eef1f6;
+    background: #f0f6fc;
     font-size: 12px;
     font-weight: 600;
     color: var(--text-muted);
@@ -1394,7 +1794,9 @@ img.avatar-photo { object-fit: cover; display: block; }
 .task-list-row:last-child { border-bottom: none; }
 .task-list-row:hover { background: #fafbfc; }
 .task-list-title { font-weight: 500; }
-.task-list-row .task-kebab { position: static; border: none; background: none; box-shadow: none; }
+.task-list-readonly .task-list-row { cursor: default; }
+.task-list-readonly .task-list-row:hover { background: #fff; }
+.task-list-empty-msg { grid-column: 1 / -1; }
 
 /* Status badge — solid light-tinted background, plain black text, no dot */
 .grid-status-badge { display: inline-block; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 400; color: var(--text); white-space: nowrap; }
@@ -1410,6 +1812,27 @@ img.avatar-photo { object-fit: cover; display: block; }
 .grid-priority-medium svg { color: #974f00; }
 .grid-priority-low svg { color: #0052cc; }
 
+/* Defects tab — reuses the Tasks list's grid/badge system, with its own column layout and
+   severity badge colors (status reuses grid-status-in_progress for "in_progress"). Rows are
+   clickable (opens the defect drawer) — no kebab column like the Tasks list has. */
+.defect-list-head, .defect-list-row {
+    grid-template-columns: 90px 1fr 180px 130px 100px 110px 110px;
+}
+.grid-status-open { background: #dde3ea; }
+.grid-status-resolved { background: #cdeeda; }
+.grid-severity-critical { background: #f6cfd4; }
+.grid-severity-major { background: #fbe6a6; }
+.grid-severity-minor { background: #dde3ea; }
+.defect-list-code { font-weight: 400; color: var(--text); }
+.defect-list-title { font-weight: 500; }
+
+/* Defect drawer's pill-selects — same pattern as the Task drawer's .tag-* classes. */
+.tag-open { background: #eef1f4; color: var(--text-muted); border-color: var(--border); }
+.tag-resolved { background: #e0f0e3; color: var(--success); border-color: #a9d3b1; }
+.tag-critical { background: #f8dcd9; color: var(--danger); border-color: #e3aca6; }
+.tag-major { background: var(--accent-soft); color: #7a5311; border-color: #d9b871; }
+.tag-minor { background: #eef1f4; color: var(--text-muted); border-color: var(--border); }
+
 /* Same solid-chip badge language as the Grid, reused for the Employees/Projects/Assets directory tables */
 .dir-badge { display: inline-block; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 400; color: var(--text); white-space: nowrap; }
 .dir-badge-active { background: #cfe0f7; }
@@ -1423,6 +1846,117 @@ img.avatar-photo { object-fit: cover; display: block; }
 .dir-badge-under_repair { background: #fbe6a6; }
 .dir-badge-retired { background: #eef1f4; }
 .dir-badge-lost { background: #f6cfd4; }
+.dir-badge-archived { background: #e2e5ea; color: var(--text-muted); }
+.row-archived { color: var(--text-muted); background: #fafbfc; }
+.row-archived a { color: var(--text-muted); }
+
+.ph-archived-notice { margin-top: 8px; font-size: 12.5px; color: var(--text-muted); background: #eef1f4; border: 1px solid var(--border); border-radius: 5px; padding: 8px 12px; }
+
+/* Employee profile: a full-width horizontal header — avatar and name/ID inline, an
+   Account settings / Change Password button on the right — with the Details/Projects/Assets
+   tabs and their content spanning the full page width below. Collapsing the Directory sidebar
+   (212px -> 52px, see .site-sidebar.collapsed) frees up 160px inside .content, which would
+   otherwise shift the whole page left; compensating with margin-left keeps it pinned at the
+   same on-screen position in both states. width:auto (not 100%) so that margin is additive
+   rather than pushing the page past max-width and off the right edge. */
+.emp-profile-page { max-width: 1200px; }
+.site-sidebar.collapsed ~ .main .emp-profile-page { margin-left: 160px; }
+/* No sidebar at all (own-profile pages, per layout_top.php) means .content starts flush at the
+   viewport's own left padding instead of after the 212px-wide sidebar column, so it needs that
+   same 212px made up here to land in the same spot as every other employee profile page. */
+.app-body:not(:has(.site-sidebar)) .emp-profile-page { margin-left: 212px; }
+
+.emp-profile-header { display: flex; align-items: flex-start; gap: 24px; padding: 32px 0 24px; }
+.emp-profile-photo-col { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; }
+.emp-profile-avatar { width: 136px; height: 136px; border-radius: 0; font-size: 44px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; object-fit: cover; }
+.emp-profile-photo-actions { display: flex; gap: 10px; }
+.emp-profile-idblock { flex: 1; min-width: 0; padding-top: 4px; }
+.emp-profile-idblock h2 { margin: 0; font-size: 18px; font-weight: 700; color: var(--text); }
+.emp-profile-code { margin-top: 6px; font-size: 18px; color: var(--text); font-weight: 600; }
+.emp-profile-header-actions { flex-shrink: 0; display: flex; align-items: center; gap: 12px; position: relative; }
+.emp-header-kebab { width: 36px; height: 36px; font-size: 22px; border: none; border-radius: var(--radius-sm); }
+
+/* Details/Projects/Assets tabs, spanning the full page width */
+#profileTabs .tabs { gap: 6px; margin-bottom: 28px; border-bottom: 1px solid var(--border-light); }
+#profileTabs .tab-btn { padding: 9px 22px; }
+.tab-count { display: inline-block; margin-left: 4px; padding: 1px 7px; border-radius: 999px; background: #eef1f4; color: var(--text-muted); font-size: 11px; font-weight: 700; }
+
+/* Details tab: Reporting sits in a narrower column, Organisational Information + Contact & Status
+   stacked in a wider column. */
+.emp-details-row { display: flex; align-items: flex-start; gap: 40px; }
+.emp-details-col { flex: 1; min-width: 0; }
+.emp-details-row-2col .emp-details-col-narrow { flex: 0 0 400px; }
+
+.emp-card { border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: #fff; padding: 28px 32px; margin-bottom: 24px; }
+.emp-card-narrow { margin-bottom: 0; }
+.emp-card-title { margin: 0 0 20px; font-size: 14px; font-weight: 700; color: var(--text); }
+.emp-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px 40px; }
+.emp-info-grid-5 { grid-template-columns: repeat(5, 1fr); }
+.emp-info-label { font-size: 11.5px; color: var(--text-muted); margin-bottom: 4px; }
+.emp-info-value { font-size: 13.5px; color: var(--text); font-weight: 500; }
+.emp-contact-link { color: var(--navy); }
+
+.emp-contact-row { display: flex; gap: 64px; flex-wrap: wrap; }
+.emp-contact-item { display: flex; align-items: center; gap: 12px; }
+.emp-contact-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #eaf1fb;
+    color: var(--navy);
+}
+.emp-manager-row { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.emp-manager-name { font-size: 13.5px; font-weight: 600; color: var(--text); margin-top: 2px; }
+
+/* Projects tab: a flat divided list — code, then name + status badge on one line, role below,
+   a chevron on the right, whole row clickable through to the project. */
+.emp-proj-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.emp-proj-heading { margin: 0; font-size: 18px; font-weight: 700; color: var(--text); }
+.emp-proj-toolbar-tools { display: flex; align-items: center; gap: 10px; }
+.emp-proj-search { min-width: 220px; }
+.emp-proj-list { display: flex; flex-direction: column; }
+.emp-proj-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 4px;
+    border-bottom: 1px solid var(--border-light);
+    text-decoration: none;
+    transition: background .12s ease;
+}
+.emp-proj-row:last-child { border-bottom: none; }
+.emp-proj-row:hover { background: #f5f8fb; }
+.emp-proj-status { flex: 0 0 84px; text-align: center; }
+.emp-proj-main { flex: 1; min-width: 0; }
+.emp-proj-code { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .02em; }
+.emp-proj-name { margin-top: 2px; font-size: 14px; font-weight: 600; color: var(--text); }
+.emp-proj-meta { margin-top: 4px; font-size: 12.5px; color: var(--text-muted); }
+.emp-proj-chevron { font-size: 20px; color: var(--text-muted); flex-shrink: 0; }
+.emp-proj-footer { display: flex; align-items: center; gap: 6px; margin-top: 16px; font-size: 12px; color: var(--text-muted); }
+.emp-proj-footer svg { color: var(--text-muted); flex-shrink: 0; }
+
+.change-password-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--text);
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(20,30,45,.06);
+}
+.change-password-btn:hover { background: #f5f8fb; border-color: var(--navy-soft); }
+.change-password-btn svg { color: var(--text-muted); flex-shrink: 0; }
+.emp-detail-value { flex: 1; min-width: 0; font-size: 13px; font-weight: 400; color: #000; }
 
 .overview-cards { display: flex; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
 .overview-cards .stat-card { min-width: 160px; }
@@ -1496,8 +2030,6 @@ img.avatar-photo { object-fit: cover; display: block; }
 .workload-row:hover .workload-name { color: var(--navy); text-decoration: underline; }
 .workload-row:last-child { margin-bottom: 0; }
 .workload-name { font-size: 11.5px; flex: 0 0 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.workload-bar-track { flex: 1; height: 7px; background: var(--border-light); border-radius: 6px; overflow: hidden; }
-.workload-bar-fill { height: 100%; background: var(--navy); border-radius: 6px; }
 .workload-count { font-size: 11.5px; font-weight: 700; color: var(--text-muted); width: 16px; text-align: right; }
 
 @media (max-width: 900px) {
@@ -1508,6 +2040,7 @@ img.avatar-photo { object-fit: cover; display: block; }
 @media (max-width: 760px) {
     .form-grid,
     .modal-body .form-grid { grid-template-columns: 1fr; }
+    .form-grid-3 { grid-template-columns: 1fr; }
     .app-body { flex-direction: column; }
     .site-sidebar {
         width: auto !important;
@@ -1527,7 +2060,7 @@ img.avatar-photo { object-fit: cover; display: block; }
 
     .site-nav-inner { padding: 0 10px; }
     .site-logo { height: 24px; padding: 3px 7px; }
-    .site-nav a.site-nav-brand { padding: 6px 12px 6px 0; }
+    .site-nav .site-nav-brand { padding: 6px 12px 6px 0; }
     .site-nav a { padding: 8px 10px; font-size: 11.5px; }
     .site-nav-user {
         margin-left: 0;
@@ -1544,7 +2077,6 @@ img.avatar-photo { object-fit: cover; display: block; }
     .task-list-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
     .task-list-row > * { border-right: none; padding: 0; }
     .task-list-title { flex-basis: 100%; }
-    .task-list-row .task-kebab { position: static; margin-left: auto; }
     .workload-name { flex-basis: 70px; }
 }
 
@@ -1558,28 +2090,118 @@ img.avatar-photo { object-fit: cover; display: block; }
 
 /* Header */
 .project-header-v2 {
-    background: var(--navy-soft);
-    border: 1px solid var(--border-light);
+    background: linear-gradient(135deg, var(--navy-soft), #eaf2fa);
+    border-bottom: 1px solid var(--border-light);
     border-radius: 0;
-    box-shadow: var(--shadow-sm);
     margin-bottom: 10px;
 }
 .ph-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; padding: 16px 20px; }
-.ph-title-block h2 { margin: 0 0 6px; font-size: 19px; color: var(--text); }
-.ph-sub { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); }
-.ph-code { font-weight: 700; color: var(--text); }
+.ph-title-block h2 { margin: 0; font-size: 19px; color: #000; display: inline; }
+.ph-title-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .ph-sep { color: var(--border); }
+
+.ov-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+.ov-value { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.4; }
+
+/* Full-access Overview tab: Description, Project Details, and Project Manager stack as three
+   distinct, separate cards — plain, light-grey 1px borders, a small radius, no shadow, no
+   colored accent bar. The 1300px cap was tuned for the sidebar-open case; collapsing the sidebar
+   frees up real extra width in .content, and capping much below that just left a wide blank gap
+   on the right instead of letting Description/Project Details use it, so the cap is raised well
+   past what the sidebar-open case ever reaches — that case is unaffected, only the collapsed one
+   gets to grow further. */
+.ov-sections { max-width: 1700px; margin-top: 32px; display: flex; flex-direction: column; gap: 20px; }
+.ov-section { border: 1px solid var(--border-light); border-radius: 6px; padding: 22px 24px; background: #fff; }
+/* Capped to roughly the same width as the Description card above it (which itself is 65% of the
+   row), not the full page — spreading the identity/contact items via justify-content:space-between
+   across the entire page width read as excessive once .ov-sections' cap was raised for the
+   sidebar-collapsed case. */
+.ov-section-plain { border: none; background: none; padding: 22px 0 0 24px; max-width: 65%; }
+/* Description sits beside Project Details in one row, aligned flush with the tabs above it.
+   align-items:flex-start (not stretch) so Description keeps its own natural height instead of
+   being stretched to match whichever card is taller, which was leaving a large empty gap under
+   its text. Description is wider than before (a fixed 680px cap rather than growing to fill all
+   remaining space) since a narrower box was reading as cramped. */
+/* Both cards split the row proportionally (65/35) rather than Description capping out at a fixed
+   width — with a capped width, extra room freed up by collapsing the sidebar just became dead
+   space to the right of Project Details instead of the two sitting balanced side by side. */
+.ov-row { display: flex; align-items: flex-start; gap: 40px; }
+.ov-row .ov-section { margin: 0; }
+.ov-section-narrow { flex: 1 1 65%; min-width: 0; }
+.ov-section-fixed { flex: 1 1 35%; min-width: 0; }
+.ov-boxes { display: flex; align-items: stretch; gap: 56px; }
+.ov-box { flex: 1; min-width: 0; }
+.ov-boxes-2col .ov-box:last-child { border-left: 1px solid var(--border-light); padding-left: 56px; }
+.ov-box-head { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+.ov-box-icon { display: flex; align-items: center; justify-content: center; color: var(--navy); flex-shrink: 0; }
+.ov-box-title { margin: 0; font-size: 14.5px; font-weight: 700; color: var(--text); }
+.ov-box-head .ov-view-all-link { margin: 0 0 0 auto; }
+.ov-card-text { margin: 0; font-size: 13.5px; line-height: 1.8; color: #000; white-space: pre-wrap; }
+/* Documents attached via the "Edit Project Details" modal show up here, inside the Description
+   card itself, rather than only being reachable through the separate Documents tab. */
+.ov-desc-docs { margin-top: 28px; }
+
+/* Overview's "Project Details" box — Start/Due date side by side with a faint vertical divider.
+   Now that the card flexibly fills ~45% of the row's width (see .ov-section-fixed above) rather
+   than sitting at a fixed 340px, stacking the two dates vertically left a tall card mostly empty
+   below two short lines; laying them out horizontally uses that width instead of just leaving it
+   blank, and keeps the card's height naturally close to its content. */
+.ov-section-fixed { padding: 18px 22px; }
+.ov-details-row { display: flex; align-items: flex-start; gap: 32px; }
+.ov-details-col { flex: 1; min-width: 0; }
+.ov-details-col-divided { border-left: 1px solid var(--border-light); padding-left: 32px; }
+.ov-details-col .ov-label { margin-bottom: 4px; }
+.ov-details-col .ov-value { font-size: 14.5px; }
+.ov-team-person { display: flex; align-items: center; gap: 14px; }
+.ov-team-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.ov-team-role { font-size: 12.5px; color: var(--text-muted); }
+
+/* Overview's "Project Manager" card — one single inline row: identity (avatar/name/ID), then
+   email, phone, department, each separated by a faint vertical divider (wraps onto its own line
+   on narrow viewports since a plain flex-wrap drops the divider on the item that wraps). */
+.ov-pm-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.ov-pm-row-item { display: flex; align-items: center; gap: 8px; padding: 4px 24px; font-size: 13px; color: var(--text); border-left: 1px solid var(--border-light); }
+.ov-pm-row-identity { padding-right: 0; }
+.ov-pm-row-item:first-child { padding-left: 0; border-left: none; }
+.ov-pm-row-item svg { color: var(--text-muted); flex-shrink: 0; }
+.ov-pm-row-identity { gap: 12px; }
+.ov-pm-id-badge { display: block; margin: 3px 0; font-size: 12.5px; font-weight: 700; color: var(--text); }
+
+/* Overview's "Key Documents" preview grid — a couple of recent project documents. */
+.ov-doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.ov-doc-card { display: flex; align-items: flex-start; gap: 10px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 16px; text-decoration: none; }
+.ov-doc-card:hover { box-shadow: var(--shadow-sm); }
+.ov-doc-icon { color: var(--text-muted); flex-shrink: 0; margin-top: 2px; }
+.ov-doc-name { font-size: 13px; font-weight: 600; color: var(--text); word-break: break-word; }
+.ov-doc-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 32px 0; color: var(--text-muted); }
+.ov-doc-empty svg { color: var(--border); margin-bottom: 14px; }
+.ov-doc-empty p { margin: 0 0 16px; font-size: 13px; }
+.ov-doc-meta { margin-top: 3px; font-size: 11.5px; color: var(--text-muted); }
+
+/* "Latest updates" / Updates tab — a project-scoped activity feed built from the notifications
+   table. Each row leads with the actor's own avatar rather than a generic type icon. */
+.ov-update-row { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; }
+.ov-update-body { flex: 1; min-width: 0; }
+.ov-update-text { font-size: 13.5px; color: var(--text); line-height: 1.5; }
+.ov-update-link { color: var(--navy); font-weight: 600; text-decoration: none; }
+.ov-update-link:hover { text-decoration: underline; }
+.ov-update-preview { margin-top: 4px; font-size: 13px; font-style: italic; color: var(--text-muted); }
+.ov-update-meta { margin-top: 4px; font-size: 12px; color: var(--text-muted); }
+.ov-view-all-link { display: block; margin-top: 10px; background: none; border: none; padding: 0; font-size: 12.5px; font-weight: 600; color: var(--navy); cursor: pointer; font-family: inherit; }
+.ov-view-all-link:hover { text-decoration: underline; }
+
+/* Updates tab (full activity feed with filters, day-grouped) */
+/* Spans the full tab width, matching every other tab (Tasks, Members, Documents) — capping it
+   narrower left the toolbar's search bar stranded well short of the tab's actual right edge,
+   with a large empty gap beyond it, instead of anchored at the true right edge. */
+.updates-page { width: 100%; }
+.ov-update-group { margin-bottom: 28px; }
+.ov-update-group-heading { margin: 0 0 4px; padding-bottom: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); border-bottom: 1px solid var(--border-light); }
+
+/* Members tab: grid-of-cards. */
+.member-card-dept { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; color: var(--text); }
 .ph-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.ph-meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); padding: 4px 4px; }
-.ph-meta-label { font-weight: 700; text-transform: uppercase; font-size: 10px; letter-spacing: .03em; color: var(--text-muted); margin-right: 4px; }
-.ph-manager-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--text); padding: 4px 4px 18px; margin-bottom: 8px; border-bottom: 1px solid var(--border-light); }
-.ph-manager-label { font-weight: 700; color: var(--text); font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
-.ph-manager-item { display: flex; align-items: center; gap: 5px; }
-.ph-manager-item .avatar { vertical-align: middle; }
 .ph-more-wrap { position: relative; }
-/* Project detail header's status stays plain bold text, not a colored pill — the colored
-   dir-badge treatment is reserved for the directory listing pages. */
-#phStatusTag { background: none; color: var(--text); font-weight: 700; padding: 0; }
 
 /* Quick task creation */
 .quick-add-input {
@@ -1626,18 +2248,11 @@ img.avatar-photo { object-fit: cover; display: block; }
 .drawer-section-title { margin: 0 0 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--text); }
 .drawer-section-head .drawer-section-title { margin-bottom: 0; }
 .drawer-section-meta { font-size: 11px; color: var(--text-muted); font-weight: 700; }
+.drawer-actions-bottom { display: flex; align-items: center; gap: 16px; }
 .field-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
 .drawer-empty { font-size: 12px; color: var(--text-muted); padding: 4px 0; }
 
 /* Dependencies */
-.dependency-add-row { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-.dependency-add-row select { flex: 1; min-width: 110px; font-size: 12px; padding: 6px 8px; }
-.dependency-group { margin-bottom: 10px; }
-.dependency-group:last-child { margin-bottom: 0; }
-.dependency-group-label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--text-muted); margin-bottom: 5px; }
-.dependency-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; }
-.dependency-remove { background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; line-height: 1; padding: 0 4px; }
-.dependency-remove:hover { color: var(--danger); }
 
 /* Comments */
 .comment-row { display: flex; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light); }
@@ -1648,7 +2263,7 @@ img.avatar-photo { object-fit: cover; display: block; }
 .comment-text { font-size: 12.5px; white-space: pre-wrap; word-break: break-word; }
 .comment-composer { position: relative; margin-top: 10px; }
 .comment-composer textarea { width: 100%; }
-.comment-composer .btn { margin-top: 8px; }
+.comment-composer .btn, .comment-composer .link-btn, .comment-composer .pill-btn { margin-top: 8px; }
 .mention-dropdown {
     position: absolute;
     z-index: 5;
@@ -1682,19 +2297,19 @@ img.avatar-photo { object-fit: cover; display: block; }
 /* Member card workload stats */
 .member-card-stats { display: flex; gap: 16px; margin-top: 10px; }
 .member-card-stat { text-align: center; }
-.member-card-stat-num { display: block; font-size: 15px; font-weight: 700; color: var(--text); }
-.member-card-stat-lbl { font-size: 9.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .02em; }
+.member-card-stat-num { display: block; font-size: 16px; font-weight: 400; color: var(--text); }
+.member-card-stat-lbl { display: block; margin-bottom: 2px; font-size: 9.5px; color: var(--text); text-transform: uppercase; letter-spacing: .02em; }
 
 /* List view: bulk selection */
 .task-list.has-select .task-list-head,
-.task-list.has-select .task-list-row { grid-template-columns: 22px 1fr 150px 100px 90px 90px 32px; }
+.task-list.has-select .task-list-row { grid-template-columns: 22px 1fr 150px 100px 90px 140px 140px 140px; }
 .task-list-check { display: flex; align-items: center; }
 .list-bulk-bar {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
-    background: var(--navy-soft);
+    background: #fff;
     border: 1px solid var(--border-light);
     border-radius: var(--radius-sm);
     padding: 8px 12px;
@@ -1703,11 +2318,17 @@ img.avatar-photo { object-fit: cover; display: block; }
     font-weight: 700;
     color: var(--navy);
 }
-.list-bulk-bar select { font-size: 11.5px; padding: 4px 6px; }
-.list-bulk-bar .emp-picker { min-width: 180px; }
+.list-bulk-bar select:not(.filter-select) { font-size: 11.5px; padding: 4px 6px; }
+.list-bulk-bar .filter-select { font-size: 11.5px; padding: 5px 26px 5px 12px; }
+.list-bulk-bar .emp-picker { min-width: 220px; }
+#listBulkClear { color: var(--navy); font-weight: 400; }
+#listBulkClear:hover { text-decoration: underline; }
+#listBulkDelete { font-weight: 400; }
 
 /* General polish: rounder, lighter-bordered panels inside the project workspace */
 #projectTabs .panel { border-radius: 0; box-shadow: var(--shadow-sm); }
+#projectTabs > .tabs { gap: 10px; }
+#projectTabs > .tabs .tab-btn { padding: 9px 18px; }
 #projectTabs .member-card,
 #projectTabs .task-card { transition: box-shadow .12s ease, transform .12s ease; }
 #projectTabs .member-card:hover,
@@ -1721,30 +2342,51 @@ img.avatar-photo { object-fit: cover; display: block; }
     .task-list.has-select .task-list-row > * { border-right: none; padding: 0; }
 }
 
-/* Discussion Forum — a deliberately plain, low-chrome layout (no boxed panels around the
-   list or thread) so the content reads cleanly, closer to a classic Q&A site than a dashboard. */
-.forum-page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding: 14px 18px; background: var(--navy-soft); border-radius: 0; }
-.forum-page-head h2 { margin: 0; font-size: 20px; color: var(--text); }
+/* Discussion Forum list page — centered column with a hero header, so the page reads
+   as its own contained space rather than stretching edge-to-edge like the dashboard tables. */
+.forum-page-wrap { max-width: 1300px; margin: 0 auto; }
 
-.forum-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; padding-bottom: 14px; border-bottom: 1px solid var(--border-light); }
+.forum-hero { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; padding: 15px 0; background: #fff; border-radius: 0; }
+.forum-hero-text h2 { margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--text); }
+.forum-ask-btn { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; padding: 8px 18px; font-size: 12px; }
+
+.forum-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border-light); }
 .forum-search { min-width: 220px; }
 .forum-sort-select { margin-left: auto; }
 
 .forum-list { }
-.forum-pagination { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 20px 0 4px; }
-.forum-pagination-info { font-size: 12px; color: var(--text-muted); }
-.forum-pagination .btn:disabled { opacity: .5; cursor: not-allowed; }
-.forum-row { display: flex; gap: 20px; padding: 18px 0; border-bottom: 1px solid var(--border-light); }
-.forum-stats { display: flex; flex-direction: row; gap: 14px; flex-shrink: 0; padding-top: 1px; }
-.forum-stat { text-align: center; min-width: 40px; }
-.forum-stat-num { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); }
-.forum-stat-answered .forum-stat-num { color: var(--success); font-weight: 700; }
-.forum-stat-lbl { display: block; font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; opacity: .8; }
+.forum-pagination { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 22px 0 4px; }
+.forum-pagination-summary { font-size: 12px; color: var(--text-muted); }
+.forum-pagination-controls { display: flex; align-items: center; gap: 6px; }
+.forum-page-btn {
+    min-width: 30px; height: 30px; padding: 0 6px;
+    border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+    background: #fff; color: var(--text); font-size: 12.5px; font-weight: 600;
+    cursor: pointer; transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.forum-page-btn:hover:not([disabled]) { background: var(--navy-soft); border-color: var(--navy-soft); }
+.forum-page-btn.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+.forum-page-btn[disabled] { opacity: .4; cursor: not-allowed; }
+.forum-page-ellipsis { color: var(--text-muted); font-size: 12.5px; padding: 0 2px; }
+/* Flat divider rows — matches the rest of the site's list pages (.dept-list-row, .notif-page-row)
+   instead of standing out as its own boxed-card component. */
+.forum-row { display: flex; gap: 16px; padding: 16px 4px; border-bottom: 1px solid var(--border-light); }
+.forum-row:last-child { border-bottom: none; }
+.forum-stats { flex-shrink: 0; width: 56px; padding-top: 1px; }
+/* Two-state answer indicator: muted when open/unanswered, green + check once solved. Plain
+   text, no badge/box, matching the site's other counts (task counts, member stats, etc.). */
+.forum-stat { text-align: center; }
+.forum-stat-num { display: block; font-size: 15px; font-weight: 400; color: #000; }
+.forum-stat-lbl { display: block; font-size: 9px; color: #000; text-transform: uppercase; letter-spacing: .03em; opacity: .8; }
+.forum-stat-check { display: block; font-size: 12px; color: var(--success); font-weight: 700; }
 .forum-row-content { flex: 1; min-width: 0; }
-.forum-row-title-line { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.forum-row-title { font-size: 14.5px; font-weight: 600; }
+.forum-row-title-line { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+.forum-row-title { font-size: 14.5px; font-weight: 400; }
 .forum-row-title:hover { text-decoration: underline; }
-.forum-tag-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.forum-tag-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+/* Lighter, smaller pills than the shared .tag used for role/priority/status badges elsewhere —
+   scoped to the forum list so those other badges are untouched. */
+.forum-tag-list .tag { padding: 1px 7px; font-size: 9px; background: var(--navy-soft); color: var(--navy); opacity: .75; border-color: transparent; }
 .forum-row-byline { font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
 .forum-row-byline .avatar { vertical-align: middle; }
 
@@ -1752,12 +2394,39 @@ img.avatar-photo { object-fit: cover; display: block; }
 .forum-status-badge.open { background: var(--navy-soft); color: var(--navy); }
 .forum-status-badge.solved { background: var(--success-soft); color: var(--success); }
 
-.forum-thread-page { max-width: 860px; }
-.forum-question-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.forum-thread-page { max-width: 1300px; margin: 0 auto; }
+.forum-question-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border-light); }
 .forum-question-title-line { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1 1 auto; min-width: 0; }
 .forum-question-head .btn { flex-shrink: 0; }
-.forum-question-head h2 { margin: 0; font-size: 21px; line-height: 1.35; color: var(--text); font-weight: 600; }
-.forum-meta-line { font-size: 12px; color: var(--text-muted); margin: 10px 0 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border-light); }
+.forum-question-head-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.forum-edit-link { display: inline-flex; align-items: center; gap: 5px; background: none; border: none; color: var(--text-muted); font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; }
+.forum-edit-link:hover { color: var(--navy); text-decoration: underline; }
+.forum-question-head h2 { margin: 0; font-size: 21px; line-height: 1.35; color: var(--text); font-weight: 400; }
+
+.forum-thread-layout { display: flex; gap: 24px; align-items: flex-start; }
+.forum-thread-main { flex: 1; min-width: 0; }
+.forum-question-details {
+    width: 260px;
+    flex-shrink: 0;
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 20px;
+}
+.forum-details-heading { margin: 0 0 16px; font-size: 14px; font-weight: 700; color: var(--text); }
+.forum-details-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-light); }
+.forum-details-row:last-child { border-bottom: none; padding-bottom: 0; }
+.forum-details-label { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+.forum-details-value { font-size: 12.5px; color: var(--text); font-weight: 400; text-align: right; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+.forum-details-value .tag { background: none; border: none; padding: 0; color: #3c78c4; font-weight: 700; }
+.forum-details-value .forum-status-badge { background: none; border: none; padding: 0; }
+.forum-details-value .forum-status-badge.open { color: #3c78c4; }
+.forum-details-value .forum-status-badge.solved { color: var(--success); }
+
+@media (max-width: 760px) {
+    .forum-thread-layout { flex-direction: column; }
+    .forum-question-details { width: 100%; }
+}
 
 .forum-thread-body { display: flex; gap: 20px; }
 .forum-thread-content { flex: 1; min-width: 0; }
@@ -1769,31 +2438,87 @@ img.avatar-photo { object-fit: cover; display: block; }
 .forum-helpful-count { font-weight: 700; }
 
 .forum-answer-actions { display: flex; gap: 14px; align-items: center; margin-top: 12px; }
-.forum-accept-btn { padding: 5px 12px; font-size: 11.5px; }
-.forum-delete-link { background: none; border: none; color: var(--text-muted); font-size: 11.5px; cursor: pointer; padding: 0; }
-.forum-delete-link:hover { color: var(--danger); text-decoration: underline; }
+.forum-accept-toggle { display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--border); border-radius: 16px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+.forum-accept-toggle:hover { border-color: var(--success); color: var(--success); }
+.forum-accept-toggle.active { background: var(--success-soft); border-color: var(--success); color: var(--success); }
+.forum-delete-link { display: inline-flex; align-items: center; gap: 4px; background: none; border: none; color: var(--danger); font-size: 11.5px; font-weight: 600; cursor: pointer; padding: 0; }
+.forum-delete-link:hover { text-decoration: underline; }
+.forum-delete-link.forum-delete-link-lg {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 700;
+}
+.forum-delete-link.forum-delete-link-lg:hover { text-decoration: underline; }
 
+.forum-answers-head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 28px 0 16px; }
+.forum-answers-head-row .forum-answers-heading { margin: 0; }
+.forum-sort-label { font-size: 12px; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.forum-sort-label .filter-select { font-size: 12px; padding: 5px 26px 5px 12px; }
 .forum-answers-heading { font-size: 15px; font-weight: 600; color: var(--text); margin: 28px 0 16px; }
-.forum-answer-row { padding: 20px 0; border-top: 1px solid var(--border-light); }
-.forum-answer-row:first-child { border-top: none; padding-top: 0; }
-.forum-answer-accepted { background: linear-gradient(90deg, var(--success-soft) 0, transparent 4px); border-left: 3px solid var(--success); padding-left: 16px; margin-left: -19px; }
-.forum-accepted-banner { display: inline-flex; align-items: center; gap: 5px; background: var(--success); color: #fff; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 3px 10px; border-radius: 10px; margin-bottom: 10px; }
+.forum-answer-row { margin-bottom: 16px; }
+.forum-answer-card {
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+}
+.forum-answer-card-accepted { border-color: var(--border-light); }
+.forum-answer-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.forum-answer-who { flex: 1; min-width: 0; }
+.forum-answer-name-line { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.forum-answer-time { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+.forum-accepted-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--success-soft); color: var(--success); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
 
 .forum-post-answer { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-light); }
 .forum-post-answer h3 { font-size: 15px; font-weight: 600; color: var(--text); margin: 0 0 12px; }
-.forum-post-answer textarea { width: 100%; margin-bottom: 10px; }
+.forum-post-answer textarea { width: 100%; margin-bottom: 10px; font-family: inherit; }
 
 .forum-attachments { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border-light); }
 .forum-attach-link { display: inline-block; font-size: 11.5px; color: var(--text-muted); cursor: pointer; margin-top: 4px; }
 .forum-attach-link:hover { color: var(--navy); text-decoration: underline; }
 
-.forum-comments { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border-light); }
-.forum-comment { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
-.forum-comment-author { color: var(--text); font-weight: 600; }
-.forum-comment-delete { background: none; border: none; color: var(--border); cursor: pointer; font-size: 13px; padding: 0 0 0 4px; line-height: 1; }
-.forum-comment-delete:hover { color: var(--danger); }
-.forum-add-comment-link { background: none; border: none; color: var(--text-muted); font-size: 11.5px; cursor: pointer; padding: 4px 0 0; }
-.forum-add-comment-link:hover { color: var(--navy); text-decoration: underline; }
-.forum-comment-form { display: flex; gap: 8px; margin-top: 6px; }
-.forum-comment-input { flex: 1; padding: 5px 8px; font-size: 12px; }
-.forum-comment-submit { padding: 5px 12px; font-size: 11.5px; }
+.forum-reply-link { display: inline-flex; align-items: center; gap: 4px; background: none; border: none; color: var(--text-muted); font-size: 11.5px; font-weight: 600; cursor: pointer; padding: 0; margin-left: auto; }
+.forum-reply-link:hover { color: var(--navy); text-decoration: underline; }
+.forum-replies { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border-light); }
+.forum-reply-list { display: flex; flex-direction: column; gap: 8px; }
+.forum-reply { display: flex; align-items: flex-start; gap: 8px; }
+.forum-reply-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--navy-soft);
+    color: var(--navy);
+    font-size: 10.5px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.forum-reply-content { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.forum-reply-bubble {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: #f2f4f6;
+    border-radius: 12px;
+    padding: 6px 12px;
+    max-width: 100%;
+    align-self: flex-start;
+}
+.forum-reply-author { color: var(--text); font-weight: 700; font-size: 11px; }
+.forum-reply-body { font-size: 12px; color: var(--text); line-height: 1.5; }
+.forum-reply-time { font-size: 10.5px; color: var(--text-muted); padding-left: 12px; }
+.forum-reply-delete { background: none; border: none; color: var(--border); cursor: pointer; font-size: 14px; padding: 2px; line-height: 1; margin-top: 4px; }
+.forum-reply-delete:hover { color: var(--danger); }
+.forum-reply-form { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.forum-reply-input { flex: 1; padding: 6px 10px; font-size: 12px; border-radius: 999px; }
+.forum-reply-input:focus { outline: none; border-color: var(--border); box-shadow: none; }
+.forum-reply-cancel { background: none; border: none; color: var(--text-muted); font-size: 11.5px; font-weight: 600; cursor: pointer; padding: 0; }
+.forum-reply-cancel:hover { color: var(--danger); text-decoration: underline; }
+

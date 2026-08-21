@@ -185,3 +185,172 @@ test_suite('API integration (forum endpoints)', function () {
         assert_equals(false, $resp['body']['found']);
     });
 });
+
+test_suite('API integration (project archive/restore)', function () {
+    $pdo = \App\Database::connection();
+
+    http_test('admin can archive any project', function () use ($pdo) {
+        $admin = make_http_user('API Archive Admin One', 'BEL-API-AR1', 'admin');
+        $mgr = make_http_user('API Archive Manager One', 'BEL-API-AR2', 'manager');
+        $projectId = make_project('BEL-PRJ-APIAR1', 'API Archive Project 1', $mgr['id']);
+
+        $resp = http_post('api/projects/status.php', ['action' => 'archive', 'project_id' => $projectId], $admin['cookies']);
+        $archivedAt = $pdo->query("SELECT archived_at FROM projects WHERE id = $projectId")->fetch()['archived_at'];
+
+        $pdo->prepare('DELETE FROM projects WHERE id = ?')->execute([$projectId]);
+        $admin['cleanup'](); $mgr['cleanup']();
+
+        assert_equals(200, $resp['status']);
+        assert_true($archivedAt !== null, 'archived_at should be set');
+    });
+
+    http_test('a project manager can archive their own project', function () use ($pdo) {
+        $mgr = make_http_user('API Archive Manager Two', 'BEL-API-AR3', 'manager');
+        $projectId = make_project('BEL-PRJ-APIAR2', 'API Archive Project 2', $mgr['id']);
+
+        $resp = http_post('api/projects/status.php', ['action' => 'archive', 'project_id' => $projectId], $mgr['cookies']);
+
+        $pdo->prepare('DELETE FROM projects WHERE id = ?')->execute([$projectId]);
+        $mgr['cleanup']();
+
+        assert_equals(200, $resp['status']);
+    });
+
+    http_test('a manager cannot archive another manager\'s project', function () use ($pdo) {
+        $ownerMgr = make_http_user('API Archive Owner Manager', 'BEL-API-AR4', 'manager');
+        $otherMgr = make_http_user('API Archive Other Manager', 'BEL-API-AR5', 'manager');
+        $projectId = make_project('BEL-PRJ-APIAR3', 'API Archive Project 3', $ownerMgr['id']);
+
+        $resp = http_post('api/projects/status.php', ['action' => 'archive', 'project_id' => $projectId], $otherMgr['cookies']);
+        $archivedAt = $pdo->query("SELECT archived_at FROM projects WHERE id = $projectId")->fetch()['archived_at'];
+
+        $pdo->prepare('DELETE FROM projects WHERE id = ?')->execute([$projectId]);
+        $ownerMgr['cleanup'](); $otherMgr['cleanup']();
+
+        assert_equals(403, $resp['status']);
+        assert_null($archivedAt);
+    });
+
+    http_test('a plain employee cannot archive a project', function () use ($pdo) {
+        $mgr = make_http_user('API Archive Manager Three', 'BEL-API-AR6', 'manager');
+        $emp = make_http_user('API Archive Employee One', 'BEL-API-AR7');
+        $projectId = make_project('BEL-PRJ-APIAR4', 'API Archive Project 4', $mgr['id']);
+
+        $resp = http_post('api/projects/status.php', ['action' => 'archive', 'project_id' => $projectId], $emp['cookies']);
+
+        $pdo->prepare('DELETE FROM projects WHERE id = ?')->execute([$projectId]);
+        $mgr['cleanup'](); $emp['cleanup']();
+
+        assert_equals(403, $resp['status']);
+    });
+
+    http_test('an unauthenticated request to archive is rejected with 401', function () use ($pdo) {
+        $mgr = make_http_user('API Archive Manager Four', 'BEL-API-AR8', 'manager');
+        $projectId = make_project('BEL-PRJ-APIAR5', 'API Archive Project 5', $mgr['id']);
+
+        $resp = http_post('api/projects/status.php', ['action' => 'archive', 'project_id' => $projectId], tempnam(sys_get_temp_dir(), 'bel_test_nocookie_'));
+
+        $pdo->prepare('DELETE FROM projects WHERE id = ?')->execute([$projectId]);
+        $mgr['cleanup']();
+
+        assert_equals(401, $resp['status']);
+    });
+
+    http_test('archiving does not delete tasks, and task/member/defect creation is blocked while archived', function () use ($pdo) {
+        $admin = make_http_user('API Archive Admin Two', 'BEL-API-AR9', 'admin');
+        $mgr = make_http_user('API Archive Manager Five', 'BEL-API-AR10', 'manager');
+        $emp = make_http_user('API Archive Employee Two', 'BEL-API-AR11');
+        $projectId = make_project('BEL-PRJ-APIAR6', 'API Archive Project 6', $mgr['id']);
+        $taskId = (new \App\Repositories\TaskRepository())->create([
+            'project_id' => $projectId, 'title' => 'Survives archiving', 'description' => '',
+            'priority' => 'medium', 'created_by' => $mgr['id'],
+        ]);
+
+        http_post('api/projects/status.php', ['action' => 'archive', 'project_id' => $projectId], $admin['cookies']);
+
+        $taskStillThere = (int)$pdo->query("SELECT COUNT(*) c FROM tasks WHERE id = $taskId")->fetch()['c'];
+        $createTaskResp = http_post('api/projects/tasks.php', ['action' => 'create', 'project_id' => $projectId, 'title' => 'New task'], $mgr['cookies']);
+        $createDefectResp = http_post('api/projects/defects.php', ['action' => 'create', 'project_id' => $projectId, 'title' => 'New defect', 'code' => 'APIAR6-D1', 'severity' => 'minor'], $mgr['cookies']);
+        $addMemberResp = http_post('api/projects/members.php', ['action' => 'add', 'project_id' => $projectId, 'user_id' => $emp['id']], $mgr['cookies']);
+
+        $pdo->prepare('DELETE FROM projects WHERE id = ?')->execute([$projectId]);
+        $admin['cleanup'](); $mgr['cleanup'](); $emp['cleanup']();
+
+        assert_equals(1, $taskStillThere, 'existing task must survive archiving');
+        assert_equals(403, $createTaskResp['status']);
+        assert_equals(403, $createDefectResp['status']);
+        assert_equals(403, $addMemberResp['status']);
+    });
+
+    http_test('archived project is excluded from the active list and included in the archived list', function () use ($pdo) {
+        $admin = make_http_user('API Archive Admin Three', 'BEL-API-AR12', 'admin');
+        $mgr = make_http_user('API Archive Manager Six', 'BEL-API-AR13', 'manager');
+        $projectId = make_project('BEL-PRJ-APIAR7', 'API Archive Project 7', $mgr['id']);
+        http_post('api/projects/status.php', ['action' => 'archive', 'project_id' => $projectId], $admin['cookies']);
+
+        $activeList = http_get('api/projects/list.php?q=' . urlencode('API Archive Project 7'), $admin['cookies']);
+        $archivedList = http_get('api/projects/list.php?archived=1&q=' . urlencode('API Archive Project 7'), $admin['cookies']);
+
+        $pdo->prepare('DELETE FROM projects WHERE id = ?')->execute([$projectId]);
+        $admin['cleanup'](); $mgr['cleanup']();
+
+        $activeIds = array_column($activeList['body']['results'] ?? [], 'id');
+        $archivedIds = array_column($archivedList['body']['results'] ?? [], 'id');
+        assert_true(!in_array($projectId, $activeIds, true), 'archived project must not appear in the active list');
+        assert_true(in_array($projectId, $archivedIds, true), 'archived project must appear in the archived list');
+    });
+
+    http_test('admin can restore an archived project and it becomes active again', function () use ($pdo) {
+        $admin = make_http_user('API Restore Admin One', 'BEL-API-RS1', 'admin');
+        $mgr = make_http_user('API Restore Manager One', 'BEL-API-RS2', 'manager');
+        $projectId = make_project('BEL-PRJ-APIRS1', 'API Restore Project 1', $mgr['id']);
+        http_post('api/projects/status.php', ['action' => 'archive', 'project_id' => $projectId], $admin['cookies']);
+
+        $resp = http_post('api/projects/status.php', ['action' => 'restore', 'project_id' => $projectId], $admin['cookies']);
+        $archivedAt = $pdo->query("SELECT archived_at FROM projects WHERE id = $projectId")->fetch()['archived_at'];
+        // Task creation should work again post-restore.
+        $createTaskResp = http_post('api/projects/tasks.php', ['action' => 'create', 'project_id' => $projectId, 'title' => 'Post-restore task'], $mgr['cookies']);
+
+        $pdo->prepare('DELETE FROM projects WHERE id = ?')->execute([$projectId]);
+        $admin['cleanup'](); $mgr['cleanup']();
+
+        assert_equals(200, $resp['status']);
+        assert_null($archivedAt);
+        assert_equals(200, $createTaskResp['status']);
+    });
+
+    http_test('permanent delete is blocked when the project has activity, even for admin', function () use ($pdo) {
+        $admin = make_http_user('API Delete Admin One', 'BEL-API-DL1', 'admin');
+        $mgr = make_http_user('API Delete Manager One', 'BEL-API-DL2', 'manager');
+        $projectId = make_project('BEL-PRJ-APIDL1', 'API Delete Project 1', $mgr['id']);
+        (new \App\Repositories\TaskRepository())->create([
+            'project_id' => $projectId, 'title' => 'Blocks permanent delete', 'description' => '',
+            'priority' => 'medium', 'created_by' => $mgr['id'],
+        ]);
+
+        $resp = http_post('api/projects/status.php', ['action' => 'delete', 'project_id' => $projectId], $admin['cookies']);
+        $stillExists = (int)$pdo->query("SELECT COUNT(*) c FROM projects WHERE id = $projectId")->fetch()['c'];
+
+        $pdo->prepare('DELETE FROM projects WHERE id = ?')->execute([$projectId]);
+        $admin['cleanup'](); $mgr['cleanup']();
+
+        assert_equals(400, $resp['status']);
+        assert_equals(1, $stillExists, 'project with activity must not be permanently deleted');
+    });
+
+    http_test('permanent delete succeeds for a genuinely empty project, admin only', function () use ($pdo) {
+        $admin = make_http_user('API Delete Admin Two', 'BEL-API-DL3', 'admin');
+        $mgr = make_http_user('API Delete Manager Two', 'BEL-API-DL4', 'manager');
+        $projectId = make_project('BEL-PRJ-APIDL2', 'API Delete Project 2', $mgr['id']);
+
+        $managerAttempt = http_post('api/projects/status.php', ['action' => 'delete', 'project_id' => $projectId], $mgr['cookies']);
+        $adminAttempt = http_post('api/projects/status.php', ['action' => 'delete', 'project_id' => $projectId], $admin['cookies']);
+        $stillExists = (int)$pdo->query("SELECT COUNT(*) c FROM projects WHERE id = $projectId")->fetch()['c'];
+
+        $admin['cleanup'](); $mgr['cleanup']();
+
+        assert_equals(403, $managerAttempt['status'], 'a manager must never be able to permanently delete');
+        assert_equals(200, $adminAttempt['status']);
+        assert_equals(0, $stillExists, 'empty project should be permanently deletable by admin');
+    });
+});
