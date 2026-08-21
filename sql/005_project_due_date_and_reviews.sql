@@ -1,4 +1,3 @@
-USE bel_pms;
 
 ALTER TABLE projects
     ADD COLUMN IF NOT EXISTS due_date DATE DEFAULT NULL AFTER start_date;

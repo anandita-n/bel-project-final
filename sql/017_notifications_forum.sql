@@ -1,4 +1,3 @@
-USE bel_pms;
 
 ALTER TABLE notifications
     MODIFY project_id INT NULL,

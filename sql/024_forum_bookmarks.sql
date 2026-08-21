@@ -1,4 +1,3 @@
-USE bel_pms;
 
 CREATE TABLE IF NOT EXISTS forum_bookmarks (
     user_id INT NOT NULL,

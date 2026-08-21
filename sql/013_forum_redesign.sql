@@ -1,4 +1,3 @@
-USE bel_pms;
 
 DROP TABLE IF EXISTS forum_question_votes;
 DROP TABLE IF EXISTS forum_answer_votes;

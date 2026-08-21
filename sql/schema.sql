@@ -1,7 +1,6 @@
 -- BEL Project Management System - Schema
-
-CREATE DATABASE IF NOT EXISTS bel_pms CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE bel_pms;
+-- Run this against whatever database you want (mysql -u root <dbname> < schema.sql) -
+-- it deliberately doesn't create or USE a specific database name itself.
 
 DROP TABLE IF EXISTS tasks;
 DROP TABLE IF EXISTS project_members;

@@ -1,4 +1,3 @@
-USE bel_pms;
 
 ALTER TABLE users
     ADD COLUMN IF NOT EXISTS stream VARCHAR(100) DEFAULT NULL AFTER role,

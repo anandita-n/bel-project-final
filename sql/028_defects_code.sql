@@ -1,4 +1,3 @@
-USE bel_pms;
 
 ALTER TABLE defects
     ADD COLUMN code VARCHAR(20) NOT NULL DEFAULT '' AFTER project_id;

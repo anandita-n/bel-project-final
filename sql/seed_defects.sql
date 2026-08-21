@@ -1,4 +1,3 @@
-USE bel_pms;
 
 -- Sample defects for a few existing projects, for demo/testing of the Defects tab.
 INSERT INTO defects (project_id, code, title, description, severity, status, assigned_to, reported_by, created_at, updated_at) VALUES

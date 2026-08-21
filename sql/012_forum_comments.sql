@@ -1,4 +1,3 @@
-USE bel_pms;
 
 CREATE TABLE IF NOT EXISTS forum_question_comments (
     id INT AUTO_INCREMENT PRIMARY KEY,

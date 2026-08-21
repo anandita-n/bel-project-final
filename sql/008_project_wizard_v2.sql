@@ -1,4 +1,3 @@
-USE bel_pms;
 
 ALTER TABLE projects
     ADD COLUMN IF NOT EXISTS department VARCHAR(100) DEFAULT NULL AFTER description,
