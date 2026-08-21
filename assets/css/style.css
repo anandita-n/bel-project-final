@@ -281,12 +281,6 @@ a:hover, a:focus { color: var(--navy); text-decoration: underline; }
     transition: color .15s ease, border-color .15s ease;
 }
 .site-nav a svg { flex-shrink: 0; opacity: .9; }
-.site-nav a:hover {
-    background: none;
-    color: var(--navy);
-    border-bottom-color: var(--navy);
-    text-decoration: none;
-}
 .site-nav a.active {
     background: none;
     color: var(--navy);
