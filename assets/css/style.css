@@ -1857,16 +1857,12 @@ tbody tr:hover td { background: #eef4f9; }
 
 /* Employee profile: a full-width horizontal header — avatar and name/ID inline, an
    Account settings / Change Password button on the right — with the Details/Projects/Assets
-   tabs and their content spanning the full page width below. Collapsing the Directory sidebar
-   just lets the page reflow left with the extra space, like every other page in the app -
-   previously this tried to stay pixel-pinned in place via a fixed margin-left compensation
-   keyed to the sidebar's collapsed width, which only holds up if that width is exactly what's
-   assumed; simpler and more robust to not fight the natural reflow at all. */
-.emp-profile-page { max-width: 1200px; }
-/* No sidebar at all (own-profile pages, per layout_top.php) means .content starts flush at the
-   viewport's own left padding instead of after the 212px-wide sidebar column, so it needs that
-   same 212px made up here to land in the same spot as every other employee profile page. */
-.app-body:not(:has(.site-sidebar)) .emp-profile-page { margin-left: 212px; }
+   tabs and their content spanning the full page width below. Centered like .pa-page-wrap
+   (see that comment) instead of just left-anchored, so it doesn't leave a large empty gap on
+   the right on wide windows. */
+.emp-profile-page { max-width: 1200px; margin-left: auto; margin-right: auto; }
+.site-sidebar.collapsed ~ .main .emp-profile-page { margin-left: max(24px, calc((100% - 1200px) / 2 - 26px)); }
+.site-sidebar:not(.collapsed) ~ .main .emp-profile-page { margin-left: max(24px, calc((100% - 1200px) / 2 - 106px)); }
 
 .emp-profile-header { display: flex; align-items: flex-start; gap: 24px; padding: 32px 0 24px; }
 .emp-profile-photo-col { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; }
