@@ -11,6 +11,14 @@ test_suite('AssetRepository', function () {
         assert_true($repo->codeExists('BEL-AST-TESTX'));
     });
 
+    test('nextSuggestedCode returns a BEL-AST-### code, one past the highest existing one', function () use ($repo) {
+        $code = $repo->nextSuggestedCode();
+        assert_true((bool)preg_match('/^BEL-AST-\d{3,}$/', $code), "Got: $code");
+
+        $repo->create(['asset_code' => 'BEL-AST-997', 'name' => 'Suggested Code Test', 'category' => 'laptop']);
+        assert_equals('BEL-AST-998', $repo->nextSuggestedCode());
+    });
+
     test('create + findById round-trip preserves fields', function () use ($repo) {
         $id = $repo->create([
             'asset_code' => 'BEL-AST-TESTY', 'name' => 'Test Monitor', 'category' => 'monitor',

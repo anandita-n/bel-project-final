@@ -42,6 +42,19 @@ final class AssetRepository
         return (bool)$stmt->fetch();
     }
 
+    /** One past the highest existing "BEL-AST-###" code — same approach as
+     *  ProjectRepository::nextSuggestedCode(), so it stays correct after deletions and ignores
+     *  any differently-formatted codes someone typed in manually. */
+    public function nextSuggestedCode(): string
+    {
+        $stmt = $this->db->query("SELECT asset_code FROM assets WHERE asset_code REGEXP '^BEL-AST-[0-9]+$'");
+        $max = 0;
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $code) {
+            $max = max($max, (int)substr($code, 8));
+        }
+        return 'BEL-AST-' . str_pad((string)($max + 1), 3, '0', STR_PAD_LEFT);
+    }
+
     public function create(array $data): int
     {
         $stmt = $this->db->prepare('

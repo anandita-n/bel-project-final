@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$suggested_code = $_POST['asset_code'] ?? '';
+$suggested_code = trim($_POST['asset_code'] ?? '') ?: $assets->nextSuggestedCode();
 
 require 'includes/layout_top.php';
 ?>
@@ -65,7 +65,8 @@ require 'includes/layout_top.php';
             <div class="pa-section-body form-grid">
                 <div class="field">
                     <label>ID <span class="required-mark">*</span></label>
-                    <input type="text" name="asset_code" placeholder="e.g. BEL-AST-001" required value="<?= htmlspecialchars($suggested_code) ?>">
+                    <input type="text" value="<?= htmlspecialchars($suggested_code) ?>" readonly>
+                    <input type="hidden" name="asset_code" value="<?= htmlspecialchars($suggested_code) ?>">
                 </div>
                 <div class="field">
                     <label>Asset Name <span class="required-mark">*</span></label>
