@@ -38,11 +38,12 @@ function openModal(title, bodyHtml) {
    and not subject to browsers suppressing/blocking native dialogs. */
 function confirmModal(message, onConfirm, opts) {
     opts = opts || {};
+    const okClass = 'okClass' in opts ? opts.okClass : 'pill-btn-danger';
     const overlay = openModal(opts.title || 'Confirm', '' +
         '<p style="margin:0 0 18px;font-size:13px;color:var(--text);">' + message + '</p>' +
         '<div style="text-align:right;">' +
         '<button type="button" class="pill-btn pill-btn-secondary" id="confirmModalCancel">Cancel</button> ' +
-        '<button type="button" class="pill-btn pill-btn-danger" id="confirmModalOk">' + (opts.okLabel || 'Confirm') + '</button>' +
+        '<button type="button" class="pill-btn ' + okClass + '" id="confirmModalOk">' + (opts.okLabel || 'Confirm') + '</button>' +
         '</div>');
     overlay.querySelector('#confirmModalCancel').addEventListener('click', closeModal);
     overlay.querySelector('#confirmModalOk').addEventListener('click', function () {

@@ -249,7 +249,7 @@ function render_employee_row(array $e, bool $inactive = false): string {
     $html .= '<td><span class="dir-badge dir-badge-' . htmlspecialchars($e['role']) . '">' . htmlspecialchars(ucfirst($e['role'])) . '</span></td>';
     $html .= '<td class="dept-cell">' . htmlspecialchars($e['department'] ?: '—') . '</td>';
     $html .= $inactive
-        ? '<td><button type="button" class="pill-btn pill-btn-sm reactivate-btn">Reactivate</button></td>'
+        ? '<td class="actions"><button type="button" class="row-kebab reactivate-kebab" title="More actions">&#8942;</button></td>'
         : '<td class="manager-cell">' . htmlspecialchars($e['manager_name'] ?? '—') . '</td>';
     $html .= '</tr>';
     return $html;

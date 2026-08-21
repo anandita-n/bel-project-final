@@ -528,6 +528,9 @@ a:hover, a:focus { color: var(--navy); text-decoration: underline; }
 .panel-table { border: none; box-shadow: none; background: transparent; }
 .panel-table .panel-head { border: none; box-shadow: none; margin-bottom: 18px; }
 .panel-table .panel-body { border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); background: var(--panel); margin: 0; }
+/* No results: the table itself is hidden and only the .empty-state message shows - drop the
+   panel-body's border/shadow "card" so it doesn't draw an empty box around nothing. */
+.panel-table .panel-body:has(> table[style*="display:none"]) { border: none; box-shadow: none; background: transparent; }
 
 /* Projects-by-department sections: a plain bold label instead of a bordered/boxed header —
    a full boxed .panel-head repeated on every section (plus the blue used for the page's single
@@ -1075,8 +1078,7 @@ tbody tr:hover td { background: #eef4f9; }
 .empty-state .empty-icon {
     width: 34px; height: 34px;
     margin: 0 auto 8px;
-    background: var(--navy-soft);
-    color: var(--navy);
+    color: var(--text-muted);
     display: flex; align-items: center; justify-content: center;
 }
 

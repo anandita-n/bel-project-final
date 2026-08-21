@@ -16,7 +16,7 @@
             ? '<td>' + escapeHtml(e.employee_code) + '</td>'
             : '<td><a class="code-link" href="employee_detail.php?id=' + e.id + '">' + escapeHtml(e.employee_code) + '</a></td>';
         const lastCell = inactive
-            ? '<td><button type="button" class="pill-btn pill-btn-sm reactivate-btn">Reactivate</button></td>'
+            ? '<td class="actions"><button type="button" class="row-kebab reactivate-kebab" title="More actions">&#8942;</button></td>'
             : '<td class="manager-cell">' + escapeHtml(e.manager_name || '—') + '</td>';
         return '' +
             '<tr data-id="' + e.id + '" data-name="' + escapeHtml(e.name) + '" data-role="' + e.role + '" ' +
@@ -31,11 +31,32 @@
             '</tr>';
     }
 
+    function reactivateRow(row) {
+        confirmModal('Reactivate this employee? They will be able to log in again.', function () {
+            apiPost('api/employees/reactivate.php', { id: row.dataset.id }).then(function () {
+                row.remove();
+                if (!document.querySelector('#employeesTbody tr')) {
+                    document.getElementById('employeesTable').style.display = 'none';
+                    document.getElementById('employeesEmpty').style.display = '';
+                }
+            }).catch(function (err) {
+                alert(err.message);
+            });
+        }, { okLabel: 'Reactivate', okClass: '' });
+    }
+
+    function bindReactivateKebabs() {
+        document.querySelectorAll('.reactivate-kebab').forEach(function (btn) {
+            initOverflowMenu(btn, [{ label: 'Reactivate', onClick: function () { reactivateRow(btn.closest('tr')); } }]);
+        });
+    }
+
     function renderRows(rows) {
         const tbody = document.getElementById('employeesTbody');
         tbody.innerHTML = rows.map(employeeRowHTML).join('');
         document.getElementById('employeesTable').style.display = rows.length ? '' : 'none';
         document.getElementById('employeesEmpty').style.display = rows.length ? 'none' : '';
+        if (inactive) bindReactivateKebabs();
     }
 
     function renderPagination(data) {
@@ -91,24 +112,5 @@
         window.location.href = 'employees.php?' + params.toString();
     });
 
-    if (inactive) {
-        document.getElementById('employeesTbody').addEventListener('click', function (ev) {
-            const btn = ev.target.closest('.reactivate-btn');
-            if (!btn) return;
-            const row = btn.closest('tr');
-            if (!confirm('Reactivate this employee? They will be able to log in again.')) return;
-
-            btn.disabled = true;
-            apiPost('api/employees/reactivate.php', { id: row.dataset.id }).then(function () {
-                row.remove();
-                if (!document.querySelector('#employeesTbody tr')) {
-                    document.getElementById('employeesTable').style.display = 'none';
-                    document.getElementById('employeesEmpty').style.display = '';
-                }
-            }).catch(function (err) {
-                alert(err.message);
-                btn.disabled = false;
-            });
-        });
-    }
+    if (inactive) bindReactivateKebabs();
 })();
